@@ -517,3 +517,159 @@ async fn recreate_container(src: &Docker, dst: &Docker, name: &str) -> ItemResul
         Err(e) => fail(e.to_string()),
     }
 }
+
+/// Run against the real engines, with OrbStack and Hullport's engine both up:
+/// `cargo test migration -- --ignored --test-threads=1`. They only create and remove
+/// `hullport-verify-*` resources, in both engines.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bollard::models::PortBinding;
+    use bollard::query_parameters::{RemoveImageOptionsBuilder, TagImageOptionsBuilder};
+
+    async fn engines() -> (Docker, Docker) {
+        let (src, _) = connect(&source_host()).await.expect("OrbStack must be running");
+        let (dst, _) = connect(&target_host()).await.expect("Hullport's engine must be running");
+        (src, dst)
+    }
+
+    fn channel() -> Channel<MigrationEvent> {
+        Channel::new(|_| Ok(()))
+    }
+
+    fn tag() -> String {
+        uuid::Uuid::new_v4().simple().to_string()[..6].to_string()
+    }
+
+    /// Run a throwaway command in a container (used to fill and read test volumes).
+    async fn run(d: &Docker, name: &str, binds: Vec<String>, cmd: &str) -> String {
+        let body = ContainerCreateBody {
+            image: Some("alpine:latest".into()),
+            cmd: Some(vec!["sh".into(), "-c".into(), cmd.into()]),
+            host_config: Some(HostConfig { binds: Some(binds), network_mode: Some("none".into()), ..Default::default() }),
+            ..Default::default()
+        };
+        let id = d.create_container(Some(CreateContainerOptionsBuilder::default().name(name).build()), body).await.unwrap().id;
+        d.start_container(&id, None).await.unwrap();
+        let mut wait = d.wait_container(&id, None);
+        while wait.next().await.is_some() {}
+        let logs: Vec<_> = d
+            .logs(&id, Some(bollard::query_parameters::LogsOptionsBuilder::default().stdout(true).stderr(true).build()))
+            .filter_map(|l| async { l.ok().map(|l| l.to_string()) })
+            .collect()
+            .await;
+        remove_helper(d, &id).await;
+        logs.concat()
+    }
+
+    async fn snapshot(d: &Docker) -> (Vec<String>, Vec<String>, Vec<String>) {
+        let mut images: Vec<String> = d.list_images(Some(ListImagesOptionsBuilder::default().build())).await.unwrap().into_iter().map(|i| i.id).collect();
+        let mut volumes: Vec<String> = d.list_volumes(None::<bollard::query_parameters::ListVolumesOptions>).await.unwrap().volumes.unwrap_or_default().into_iter().map(|v| v.name).collect();
+        let mut containers: Vec<String> = d
+            .list_containers(Some(ListContainersOptionsBuilder::default().all(true).build()))
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|c| format!("{:?} {:?}", c.names, c.state))
+            .collect();
+        images.sort();
+        volumes.sort();
+        containers.sort();
+        (images, volumes, containers)
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn migration_plan_leaves_orbstack_unchanged() {
+        let (src, _) = engines().await;
+        let before = snapshot(&src).await;
+        let plan = migration_plan().await.unwrap();
+        assert!(plan.source.available && plan.target.available);
+        assert!(!plan.images.is_empty());
+        assert_eq!(snapshot(&src).await, before);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn migration_copies_a_volume_with_owners_and_modes() {
+        let (src, dst) = engines().await;
+        let t = tag();
+        let vol = format!("hullport-verify-vol-{t}");
+        src.create_volume(VolumeCreateRequest { name: Some(vol.clone()), ..Default::default() }).await.unwrap();
+        run(&src, &format!("hullport-verify-fill-{t}"), vec![format!("{vol}:/v")], "mkdir /v/pg && echo secret > /v/pg/data && chown -R 70:70 /v/pg && chmod 700 /v/pg").await;
+
+        let r = copy_volume(&src, &dst, &vol, false, &CancellationToken::new(), &channel()).await;
+        let listing = run(&dst, &format!("hullport-verify-read-{t}"), vec![format!("{vol}:/v:ro")], "stat -c '%u:%g %a %n' /v/pg /v/pg/data; cat /v/pg/data").await;
+        let helpers_left = src
+            .list_containers(Some(ListContainersOptionsBuilder::default().all(true).filters(&crate::cmd::filters(&[("label", HELPER_LABEL)])).build()))
+            .await
+            .unwrap()
+            .len();
+
+        src.remove_volume(&vol, None::<bollard::query_parameters::RemoveVolumeOptions>).await.unwrap();
+        dst.remove_volume(&vol, None::<bollard::query_parameters::RemoveVolumeOptions>).await.unwrap();
+        assert_eq!(r.status, "done", "{r:?}");
+        assert!(listing.contains("70:70 700 /v/pg"), "{listing}");
+        assert!(listing.contains("70:70 644 /v/pg/data"), "{listing}");
+        assert!(listing.contains("secret"), "{listing}");
+        assert_eq!(helpers_left, 0, "helpers are removed from OrbStack");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn migration_copies_an_image_with_the_same_id() {
+        let (src, dst) = engines().await;
+        let t = tag();
+        let repo = format!("hullport-verify-img-{t}");
+        src.tag_image("alpine:latest", Some(TagImageOptionsBuilder::default().repo(&repo).tag("v1").build())).await.unwrap();
+        let reference = format!("{repo}:v1");
+
+        let r = copy_image(&src, &dst, &[reference.clone()], &reference, &CancellationToken::new(), &channel()).await;
+        let (a, b) = (src.inspect_image(&reference).await.map(|i| i.id), dst.inspect_image(&reference).await.map(|i| i.id));
+
+        let rm = || RemoveImageOptionsBuilder::default().noprune(true).build();
+        src.remove_image(&reference, Some(rm()), None).await.unwrap();
+        let _ = dst.remove_image(&reference, Some(rm()), None).await;
+        assert_eq!(r.status, "done", "{r:?}");
+        assert_eq!(a.unwrap(), b.expect("the tag arrived in Hullport"));
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn migration_recreates_a_loose_container_stopped() {
+        let (src, dst) = engines().await;
+        let t = tag();
+        let (name, net) = (format!("hullport-verify-loose-{t}"), format!("hullport-verify-net-{t}"));
+        src.create_network(NetworkCreateRequest { name: net.clone(), driver: Some("bridge".into()), ..Default::default() }).await.unwrap();
+        let body = ContainerCreateBody {
+            image: Some("alpine:latest".into()),
+            cmd: Some(vec!["sleep".into(), "60".into()]),
+            env: Some(vec!["HULLPORT_VERIFY=1".into()]),
+            labels: Some(HashMap::from([("dev.hullport.verify".into(), t.clone())])),
+            host_config: Some(HostConfig {
+                network_mode: Some(net.clone()),
+                port_bindings: Some(HashMap::from([("80/tcp".into(), Some(vec![PortBinding { host_ip: Some("127.0.0.1".into()), host_port: Some("18099".into()) }]))])),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        src.create_container(Some(CreateContainerOptionsBuilder::default().name(&name).build()), body).await.unwrap();
+
+        let r = recreate_container(&src, &dst, &name).await;
+        let copy = dst.inspect_container(&name, None).await;
+
+        remove_helper(&src, &name).await;
+        let _ = src.remove_network(&net).await;
+        remove_helper(&dst, &name).await;
+        let _ = dst.remove_network(&net).await;
+        assert_eq!(r.status, "done", "{r:?}");
+        let copy = copy.expect("created in Hullport");
+        let cfg = copy.config.unwrap();
+        assert!(cfg.env.unwrap().contains(&"HULLPORT_VERIFY=1".to_string()));
+        assert_eq!(cfg.labels.unwrap().get("dev.hullport.verify"), Some(&t));
+        assert_eq!(copy.state.and_then(|s| s.running), Some(false), "recreated stopped");
+        let ports = copy.host_config.unwrap().port_bindings.unwrap();
+        assert_eq!(ports["80/tcp"].as_ref().unwrap()[0].host_port.as_deref(), Some("18099"));
+        assert!(copy.network_settings.unwrap().networks.unwrap().contains_key(&net));
+    }
+}
