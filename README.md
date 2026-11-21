@@ -45,13 +45,14 @@ npm run tauri build    # signed-less Hullport.app in target/release/bundle/macos
 ```sh
 target/debug/hullport --screenshot shots/now.png [--section images]   # draws ~120 frames, saves a PNG, exits
 target/debug/hullport --self-test shots/self-test.json                # walks the sections, creates+deletes a throwaway volume
-target/debug/hullport --verify shots/verify.json --fixtures "$PWD/tests/fixtures" [--external <volume-name>]
+target/debug/hullport --verify shots/verify.json --fixtures "$PWD/tests/fixtures" [--external <volume-name>] [--context <name>]
 ```
 
 `--verify` runs end-to-end checks against the real engine (container lifecycle, logs, exec + PTY, stats, pull/tag,
 volume browse/export, BuildKit build + cancel, network connect/disconnect). It only creates resources named
 `hullport-verify-*` and removes them afterwards. With `--external NAME` it creates a marker volume `NAME-ready`
 and waits for a volume `NAME` to be created and removed with the docker CLI, to prove external changes show up.
+`--context NAME` connects to that Docker context for this run only, ignoring the context saved in the app.
 
 ## Architecture
 

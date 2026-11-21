@@ -25,6 +25,8 @@ pub struct LaunchMode {
     pub external: Option<String>,
     /// `--screenshot` only: which section to show (containers by default).
     pub section: Option<String>,
+    /// `--context NAME`: Docker context for this run only, instead of the saved preference.
+    pub context: Option<String>,
 }
 
 pub struct AppState {

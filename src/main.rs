@@ -14,7 +14,7 @@ use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 fn parse_launch() -> LaunchMode {
     let args: Vec<String> = std::env::args().collect();
-    let mut mode = LaunchMode { mode: "normal".into(), path: None, fixtures: None, external: None, section: None };
+    let mut mode = LaunchMode { mode: "normal".into(), path: None, fixtures: None, external: None, section: None, context: None };
     let mut i = 1;
     while i < args.len() {
         let flag = args[i].as_str();
@@ -45,6 +45,10 @@ fn parse_launch() -> LaunchMode {
             }
             "--external" => {
                 mode.external = value;
+                i += 1;
+            }
+            "--context" => {
+                mode.context = value;
                 i += 1;
             }
             _ => {}
@@ -85,7 +89,8 @@ fn main() {
             }
             let store = store::Store::new(data_dir);
             let prefs = store.prefs();
-            let manager = docker::DockerManager::new(prefs.context.clone());
+            // `--context` wins for this run only; the saved preference is left as it is.
+            let manager = docker::DockerManager::new(launch.context.clone().or(prefs.context.clone()));
             manager.spawn_supervisor(app.handle().clone());
 
             // Clear helper containers a previous run may have left behind.
