@@ -1,0 +1,13 @@
+diff --git a/pkg/hostagent/inotify_darwin.go b/pkg/hostagent/inotify_darwin.go
+index 821cb80..1814b78 100644
+--- a/pkg/hostagent/inotify_darwin.go
++++ b/pkg/hostagent/inotify_darwin.go
+@@ -6,5 +6,7 @@ package hostagent
+ import "github.com/rjeczalik/notify"
+ 
+ func GetNotifyEvent() notify.Event {
+-	return notify.Create | notify.Write | notify.FSEventsInodeMetaMod
++	// Rename covers atomic saves (write a temp file, rename it over the target),
++	// which many editors use; FSEvents reports the new name as a rename.
++	return notify.Create | notify.Write | notify.Rename | notify.FSEventsInodeMetaMod
+ }
