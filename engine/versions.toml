@@ -1,0 +1,53 @@
+# Every piece the Hullport engine ships or installs in its VM, pinned in one place.
+# To upgrade: change a version, its URL and its checksum here, then rebuild. Keep the
+# flat `key = "value"` form; scripts/engine.sh reads this file without a TOML parser.
+
+# Lima runs the Linux VM with Apple's Virtualization framework. Apache-2.0.
+# Built from source (`scripts/engine.sh build`, needs Go 1.26.8+) with the patches in
+# engine/patches/lima, linked against the patched gvisor-tap-vsock below.
+[lima]
+version = "2.3.0"
+git = "https://github.com/lima-vm/lima.git"
+commit = "800a96b14e96b5d2ceb20ab2602147c1e79224ea"
+
+# User-mode networking and the VM's DNS server, compiled into limactl. Apache-2.0.
+# Patched so DNS answers over 512 bytes are forwarded (engine/patches/gvisor-tap-vsock).
+[gvisor_tap_vsock]
+version = "0.9.0"
+git = "https://github.com/containers/gvisor-tap-vsock.git"
+commit = "6dbb5d4fa0033356c72a201346f8350594229868"
+
+# Ubuntu 26.04 server cloud image, the same build Lima v2.3.0 pins in templates/_images/ubuntu-26.04.yaml.
+[guest_image]
+version = "26.04-release-20261016"
+url = "https://cloud-images.ubuntu.com/releases/resolute/release-20261016/ubuntu-26.04-server-cloudimg-arm64.img"
+sha256 = "8eb876c2ccc4b6ff89e4a65d511815923b285e04503ba465809bf587f763da24"
+
+# Docker Engine inside the VM, from Docker's apt repository (download.docker.com/linux/ubuntu). Apache-2.0.
+[guest_docker]
+version = "5:29.10.0-1~ubuntu.26.04~resolute"
+containerd = "2.4.2-4~ubuntu.26.04~resolute"
+
+# docker CLI for macOS arm64 (client only). Apache-2.0.
+[docker_cli]
+version = "29.10.0"
+url = "https://download.docker.com/mac/static/stable/aarch64/docker-29.10.0.tgz"
+sha256 = "84025e01f7716eb8bd1064c49a9d2b3a38547fa963983e81017c73ee8c5d540b"
+
+# Apache-2.0.
+[compose]
+version = "5.8.0"
+url = "https://github.com/docker/compose/releases/download/v5.8.0/docker-compose-darwin-aarch64"
+sha256 = "008b8fcf6c6d60340f5796626a0f0d51c042085793a9b1653343011727140b71"
+
+# Apache-2.0. Its checksums.txt has no darwin entries; this is the digest GitHub reports for the asset.
+[buildx]
+version = "0.39.1"
+url = "https://github.com/docker/buildx/releases/download/v0.39.1/buildx-v0.39.1.darwin-arm64"
+sha256 = "7a7f10602f0826d36b046e8db012b4cbfaa4ba56f9d2a5d374fe5bb7ae864fc4"
+
+# Stores registry logins in the macOS keychain (credsStore "osxkeychain"). MIT.
+[credential_osxkeychain]
+version = "0.9.13"
+url = "https://github.com/docker/docker-credential-helpers/releases/download/v0.9.13/docker-credential-osxkeychain-v0.9.13.darwin-arm64"
+sha256 = "72512a79a6f1757a0b104548614dedc9de26825efcb6a4ee3e719be25578ccc2"
