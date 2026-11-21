@@ -2,8 +2,30 @@
 //! configurations and records of builds started from this app.
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+
+/// Data folder name used before the rename to Hullport.
+pub const LEGACY_DIR: &str = "dev.berth.app";
+const DATA_FILES: [&str; 3] = ["prefs.json", "build-configs.json", "build-records.json"];
+const IMPORT_MARKER: &str = ".imported-from-dev.berth.app";
+
+/// Copy the files saved under the old data folder into `dir`, once. Files that already exist in
+/// `dir` are kept, and the old folder is never changed.
+pub fn import_legacy(dir: &Path, legacy: &Path) -> std::io::Result<()> {
+    let marker = dir.join(IMPORT_MARKER);
+    if marker.exists() || !legacy.is_dir() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(dir)?;
+    for file in DATA_FILES {
+        let (from, to) = (legacy.join(file), dir.join(file));
+        if from.is_file() && !to.exists() {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    std::fs::write(marker, "")
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]
@@ -139,5 +161,49 @@ impl Store {
         let mut all: Vec<BuildRecord> = self.read("build-records.json");
         all.retain(|r| !ids.contains(&r.id));
         self.write("build-records.json", &all)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir() -> PathBuf {
+        let d = std::env::temp_dir().join(format!("hullport-store-test-{}", uuid::Uuid::new_v4().simple()));
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn imports_legacy_files_once_without_overwriting() {
+        let root = temp_dir();
+        let (legacy, dir) = (root.join(LEGACY_DIR), root.join("dev.hullport.app"));
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(legacy.join("prefs.json"), r#"{"context":"orbstack"}"#).unwrap();
+        std::fs::write(legacy.join("build-records.json"), "[]").unwrap();
+        std::fs::write(dir.join("build-records.json"), "[\"newer\"]").unwrap();
+
+        import_legacy(&dir, &legacy).unwrap();
+        assert_eq!(std::fs::read_to_string(dir.join("prefs.json")).unwrap(), r#"{"context":"orbstack"}"#);
+        assert_eq!(std::fs::read_to_string(dir.join("build-records.json")).unwrap(), "[\"newer\"]");
+        assert!(!dir.join("build-configs.json").exists());
+
+        // A second launch copies nothing, even if the old folder changed.
+        std::fs::write(legacy.join("build-configs.json"), "[]").unwrap();
+        import_legacy(&dir, &legacy).unwrap();
+        assert!(!dir.join("build-configs.json").exists());
+        assert!(legacy.join("prefs.json").exists());
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn skips_when_there_is_no_legacy_folder() {
+        let root = temp_dir();
+        let dir = root.join("dev.hullport.app");
+        import_legacy(&dir, &root.join(LEGACY_DIR)).unwrap();
+        assert!(!dir.exists());
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

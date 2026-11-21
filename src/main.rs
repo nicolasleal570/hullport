@@ -77,6 +77,12 @@ fn main() {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
             let data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("hullport"));
+            // Bring over prefs and build history saved before the rename (dev.berth.app), once.
+            if let Some(parent) = data_dir.parent() {
+                if let Err(e) = store::import_legacy(&data_dir, &parent.join(store::LEGACY_DIR)) {
+                    log::warn!("could not import data from {}: {e}", store::LEGACY_DIR);
+                }
+            }
             let store = store::Store::new(data_dir);
             let prefs = store.prefs();
             let manager = docker::DockerManager::new(prefs.context.clone());
