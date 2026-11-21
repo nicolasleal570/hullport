@@ -181,6 +181,8 @@ fn main() {
             cmd::engines::engine_status,
             cmd::engines::engine_start,
             cmd::engines::engine_stop,
+            cmd::migration::migration_plan,
+            cmd::migration::migration_run,
             cmd::containers::list_containers,
             cmd::containers::inspect_container,
             cmd::containers::container_action,

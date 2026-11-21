@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { api, errMsg, type EngineInfo, type EngineState, type HullportEngine } from "../../lib/api";
 import { useEngineProgress, useStatus } from "../../lib/queries";
 import type { ConnStatus } from "../../lib/types";
+import { go } from "../../lib/store";
 import { toast } from "../../lib/toast";
 import { Badge, Button, Dot, ErrorBox, Loading } from "../../components/ui";
 
@@ -111,6 +112,7 @@ function EngineRow({ e, active }: { e: EngineInfo; active: boolean }) {
         <div className="text-[11.5px] text-fg2">{e.note}</div>
       </div>
       <div className="text-[12px] text-fg2 w-[110px] text-right">{!e.installed ? "Not installed" : e.running ? "Running" : "Stopped"}</div>
+      {e.id === "orbstack" && e.installed && <Button onClick={() => go("migrate")}>Migrate to Hullport…</Button>}
       {e.running && !active && <Button onClick={() => api.setContext(e.context)}>Use</Button>}
     </div>
   );

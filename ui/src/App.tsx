@@ -14,6 +14,7 @@ import { VolumesView } from "./features/volumes/VolumesView";
 import { NetworksView } from "./features/networks/NetworksView";
 import { BuildsView } from "./features/builds/BuildsView";
 import { EnginesView } from "./features/engines/EnginesView";
+import { MigrationView } from "./features/migration/MigrationView";
 import { runLaunchMode } from "./launch";
 
 export default function App() {
@@ -34,7 +35,7 @@ export default function App() {
 
   useEffect(() => { runLaunchMode(); }, []);
 
-  const needsEngine = section !== "builds" && section !== "engines" && st.state !== "connected";
+  const needsEngine = section !== "builds" && section !== "engines" && section !== "migrate" && st.state !== "connected";
   return (
     <div className="h-full flex">
       <Sidebar />
@@ -47,6 +48,7 @@ export default function App() {
             {section === "builds" && <BuildsView />}
             {section === "networks" && <NetworksView />}
             {section === "engines" && <EnginesView />}
+            {section === "migrate" && <MigrationView />}
           </>
         )}
       </main>

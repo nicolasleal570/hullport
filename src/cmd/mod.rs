@@ -3,6 +3,7 @@ pub mod containers;
 pub mod engines;
 pub mod exec;
 pub mod images;
+pub mod migration;
 pub mod networks;
 pub mod system;
 pub mod volumes;

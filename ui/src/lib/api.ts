@@ -28,6 +28,8 @@ export const api = {
   engineStatus: () => call<EngineProgress>("engine_status"),
   engineStart: () => call<void>("engine_start"),
   engineStop: () => call<void>("engine_stop"),
+  migrationPlan: () => call<MigrationPlan>("migration_plan"),
+  migrationRun: (selection: MigrationSelection, on: (e: MigrationEvent) => void) => stream("migration_run", { selection }, on),
 
   // containers
   containers: () => call<T.ContainerSummary[]>("list_containers"),
@@ -121,4 +123,18 @@ export interface HullportEngine {
   cpus?: string | null; memory?: string | null; disk?: string | null; managed: boolean;
 }
 export interface EngineInfo { id: string; name: string; installed: boolean; running: boolean; socket: string; context: string; note: string }
+export interface MigrationSide { available: boolean; host: string; version?: string | null; error?: string | null }
+export interface MigrationImage { id: string; tags: string[]; size: number; platform: string; skip?: string | null }
+export interface MigrationVolume { name: string; size?: number | null; inUseBy: string[]; targetSize?: number | null; skip?: string | null }
+export interface MigrationContainer {
+  name: string; image: string; state: string; composeProject?: string | null; composeDir?: string | null;
+  changes?: number | null; inTarget: boolean;
+}
+export interface MigrationPlan {
+  source: MigrationSide; target: MigrationSide; images: MigrationImage[]; volumes: MigrationVolume[]; containers: MigrationContainer[];
+  neededBytes: number; macFreeBytes?: number | null;
+}
+export interface MigrationSelection { images: string[]; volumes: string[]; replaceVolumes: string[]; containers: string[] }
+export interface MigrationItem { kind: "image" | "volume" | "container"; name: string; status: "copying" | "done" | "skipped" | "failed"; detail?: string | null; bytes?: number | null }
+export type MigrationEvent = ({ type: "item" } & MigrationItem) | { type: "done"; results: MigrationItem[]; canceled: boolean };
 export interface EnginesOverview { hullport: HullportEngine; others: EngineInfo[]; dockerCli?: string | null }

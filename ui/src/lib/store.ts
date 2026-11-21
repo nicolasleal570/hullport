@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-export type Section = "containers" | "images" | "volumes" | "builds" | "networks" | "engines";
+export type Section = "containers" | "images" | "volumes" | "builds" | "networks" | "engines" | "migrate";
 
 interface UiState {
   section: Section;
