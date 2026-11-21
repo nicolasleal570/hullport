@@ -1,0 +1,96 @@
+diff --git a/pkg/portfwd/listener_darwin.go b/pkg/portfwd/listener_darwin.go
+index 8a0154f..771dd32 100644
+--- a/pkg/portfwd/listener_darwin.go
++++ b/pkg/portfwd/listener_darwin.go
+@@ -5,14 +5,39 @@ package portfwd
+ 
+ import (
+ 	"context"
++	"errors"
+ 	"fmt"
+ 	"net"
+ 	"path/filepath"
+ 	"strconv"
++	"syscall"
+ 
+ 	"github.com/sirupsen/logrus"
+ )
+ 
++// errPortInUse reports a host port that another process already listens on.
++var errPortInUse = errors.New("already in use on the host by another process")
++
++// checkWildcardFree refuses a specific address such as 127.0.0.1:P while another process
++// listens on *:P. macOS lets the more specific bind succeed, which would silently take
++// localhost traffic away from that process.
++func checkWildcardFree(ctx context.Context, ip net.IP, port string) error {
++	if ip.IsUnspecified() {
++		// Binding the wildcard itself already fails when it is taken.
++		return nil
++	}
++	// SO_REUSEADDR (via Control) keeps sockets in TIME_WAIT from counting as in use.
++	lc := net.ListenConfig{Control: Control}
++	probe, err := lc.Listen(ctx, "tcp4", net.JoinHostPort("0.0.0.0", port))
++	if errors.Is(err, syscall.EADDRINUSE) {
++		return fmt.Errorf("port %s is %w", port, errPortInUse)
++	}
++	if err != nil {
++		return nil
++	}
++	return probe.Close()
++}
++
+ func Listen(ctx context.Context, listenConfig net.ListenConfig, hostAddress string) (net.Listener, error) {
+ 	if filepath.IsAbs(hostAddress) {
+ 		// Handle Unix domain sockets
+@@ -31,6 +56,10 @@ func Listen(ctx context.Context, listenConfig net.ListenConfig, hostAddress stri
+ 	localPort, _ := strconv.Atoi(localPortStr)
+ 
+ 	if !localIP.Equal(IPv4loopback1) || localPort >= 1024 {
++		if err := checkWildcardFree(ctx, localIP, localPortStr); err != nil {
++			logListenError(err, "tcp", hostAddress)
++			return nil, err
++		}
+ 		tcpLis, err := listenConfig.Listen(ctx, "tcp", hostAddress)
+ 		if err != nil {
+ 			logListenError(err, "tcp", hostAddress)
+diff --git a/pkg/portfwd/listener_darwin_test.go b/pkg/portfwd/listener_darwin_test.go
+new file mode 100644
+index 0000000..44a04e1
+--- /dev/null
++++ b/pkg/portfwd/listener_darwin_test.go
+@@ -0,0 +1,35 @@
++// SPDX-FileCopyrightText: Copyright The Lima Authors
++// SPDX-License-Identifier: Apache-2.0
++
++package portfwd
++
++import (
++	"net"
++	"strconv"
++	"testing"
++
++	"gotest.tools/v3/assert"
++
++	"github.com/lima-vm/lima/v2/pkg/freeport"
++)
++
++// Another app (e.g. another Docker engine) publishing *:P must keep localhost:P.
++func TestListenRefusesPortTakenByWildcardListener(t *testing.T) {
++	lc := net.ListenConfig{Control: Control}
++	holder, err := lc.Listen(t.Context(), "tcp4", "0.0.0.0:0")
++	assert.NilError(t, err)
++	defer holder.Close()
++	port := strconv.Itoa(holder.Addr().(*net.TCPAddr).Port)
++
++	_, err = Listen(t.Context(), lc, net.JoinHostPort("127.0.0.1", port))
++	assert.ErrorIs(t, err, errPortInUse)
++}
++
++func TestListenAcceptsFreePort(t *testing.T) {
++	port, err := freeport.TCP()
++	assert.NilError(t, err)
++
++	l, err := Listen(t.Context(), net.ListenConfig{Control: Control}, net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
++	assert.NilError(t, err)
++	assert.NilError(t, l.Close())
++}
