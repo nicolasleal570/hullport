@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --color-bg: var(--c-bg);
+  --color-panel: var(--c-panel);
+  --color-raised: var(--c-raised);
+  --color-sidebar: var(--c-sidebar);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-fg: var(--c-fg);
+  --color-fg2: var(--c-fg2);
+  --color-fg3: var(--c-fg3);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-hover: var(--c-hover);
+  --color-sel: var(--c-sel);
+  --color-ok: var(--c-ok);
+  --color-warn: var(--c-warn);
+  --color-bad: var(--c-bad);
+  --color-field: var(--c-field);
+}
+
+:root {
+  color-scheme: dark;
+  --c-bg: #1c1c1e;
+  --c-panel: #202023;
+  --c-raised: #2a2a2e;
+  --c-sidebar: rgba(36, 36, 40, 0.55);
+  --c-line: rgba(255, 255, 255, 0.075);
+  --c-line-strong: rgba(255, 255, 255, 0.14);
+  --c-fg: #ececee;
+  --c-fg2: #a5a5ab;
+  --c-fg3: #6f6f76;
+  --c-accent: #0a84ff;
+  --c-accent-soft: rgba(10, 132, 255, 0.18);
+  --c-hover: rgba(255, 255, 255, 0.045);
+  --c-sel: rgba(10, 132, 255, 0.26);
+  --c-ok: #32d74b;
+  --c-warn: #ffd60a;
+  --c-bad: #ff453a;
+  --c-field: rgba(255, 255, 255, 0.07);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --c-bg: #ffffff;
+    --c-panel: #fbfbfc;
+    --c-raised: #f2f2f4;
+    --c-sidebar: rgba(232, 232, 236, 0.55);
+    --c-line: rgba(0, 0, 0, 0.08);
+    --c-line-strong: rgba(0, 0, 0, 0.15);
+    --c-fg: #1d1d1f;
+    --c-fg2: #5f5f66;
+    --c-fg3: #9a9aa1;
+    --c-accent: #007aff;
+    --c-accent-soft: rgba(0, 122, 255, 0.12);
+    --c-hover: rgba(0, 0, 0, 0.035);
+    --c-sel: rgba(0, 122, 255, 0.16);
+    --c-ok: #28a745;
+    --c-warn: #c99700;
+    --c-bad: #e0352b;
+    --c-field: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Opaque window (screenshots / no vibrancy). */
+html.opaque {
+  --c-sidebar: #26262a;
+}
+@media (prefers-color-scheme: light) {
+  html.opaque { --c-sidebar: #ececf0; }
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--c-fg);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.selectable, .selectable * {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.35);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.55); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+input, select, textarea, button { font: inherit; color: inherit; }
+button { cursor: default; }
+:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; border-radius: 5px; }
+
+.field {
+  background: var(--c-field);
+  border: 1px solid var(--c-line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  height: 26px;
+  outline: none;
+  min-width: 0;
+}
+.field:focus { border-color: var(--c-accent); box-shadow: 0 0 0 3px var(--c-accent-soft); }
+textarea.field { height: auto; }
+select.field { padding-right: 4px; }
+
+.mono { font-family: var(--font-mono); font-size: 12px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.9s linear infinite; }
+
+@keyframes fadein { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+.fadein { animation: fadein 0.14s ease-out; }
+
+@keyframes pulse { 50% { opacity: 0.4; } }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+
+.xterm { padding: 6px 0 0 8px; height: 100%; }
+.xterm-viewport::-webkit-scrollbar-thumb { background-color: rgba(128,128,128,0.4); }
