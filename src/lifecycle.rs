@@ -47,15 +47,10 @@ pub fn setup(app: &AppHandle, engine: Arc<Engine>) -> tauri::Result<()> {
             let s = engine.refresh();
             let step = engine.progress(s).step;
             if last != Some((s, step)) {
-                show_state(&handle, s);
-                // The engine is up: move the app onto it if it's disconnected or on a stand-in.
                 if s == EngineState::Running {
-                    if let Some(st) = handle.try_state::<AppState>() {
-                        if st.docker.could_do_better() {
-                            st.docker.reconnect();
-                        }
-                    }
+                    connect_to_engine(&handle);
                 }
+                show_state(&handle, s);
                 last = Some((s, step));
             }
             // Follow start-up closely; otherwise only notice outside changes.
@@ -159,11 +154,26 @@ pub fn start_engine(app: &AppHandle) {
     let handle = app.clone();
     std::thread::spawn(move || {
         show_state(&handle, EngineState::Starting);
-        if let Err(e) = engine.start() {
-            log::warn!("engine start failed: {e}");
+        match engine.start() {
+            Ok(()) => connect_to_engine(&handle),
+            Err(e) => log::warn!("engine start failed: {e}"),
         }
         show_state(&handle, engine.state());
     });
+}
+
+/// The engine just came up: move the app onto it if it's disconnected or on a stand-in, and
+/// wait (briefly) for that connection, so "Running" never shows next to "Docker unavailable".
+fn connect_to_engine(app: &AppHandle) {
+    let Some(st) = app.try_state::<AppState>() else { return };
+    if !st.docker.could_do_better() {
+        return;
+    }
+    st.docker.reconnect();
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    while std::time::Instant::now() < deadline && st.docker.status().state != "connected" {
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }
 
 pub fn stop_engine(app: &AppHandle) {
