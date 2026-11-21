@@ -63,10 +63,11 @@ fn socket_available(host: &str) -> bool {
     }
 }
 
-/// Well-known engine sockets on macOS (OrbStack, Docker Desktop, Colima, Rancher, Podman).
+/// Well-known engine sockets on macOS (Hullport, OrbStack, Docker Desktop, Colima, Rancher, Podman).
 fn well_known_sockets() -> Vec<(String, String, PathBuf)> {
     let h = home();
     vec![
+        ("hullport".into(), "Hullport engine socket".into(), crate::engine::home().join("run/docker.sock")),
         ("orbstack".into(), "OrbStack engine socket".into(), h.join(".orbstack/run/docker.sock")),
         ("desktop".into(), "Docker Desktop engine socket".into(), h.join(".docker/run/docker.sock")),
         ("colima".into(), "Colima engine socket".into(), h.join(".colima/default/docker.sock")),
