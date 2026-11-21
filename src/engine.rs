@@ -43,16 +43,47 @@ impl EngineState {
     }
 }
 
+/// Steps shown while the engine starts, each with the host agent log message that ends it.
+/// The last one ends when Docker answers.
+pub const START_STEPS: [(&str, &str); 3] = [
+    ("Starting the virtual machine", "vm state change: running"),
+    ("Booting Linux", "Guest agent is running"),
+    ("Starting Docker", ""),
+];
+
+/// What the UI and the menu bar show about the engine.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct EngineProgress {
+    pub state: EngineState,
+    /// While starting: index into `START_STEPS`, and its label.
+    pub step: Option<usize>,
+    pub step_label: Option<String>,
+    /// Labels of all the start steps.
+    pub steps: Vec<&'static str>,
+    /// While starting: when the start began, in ms since the Unix epoch.
+    pub started_at: Option<u64>,
+    pub error: Option<String>,
+}
+
 pub struct Engine {
     home: PathBuf,
     child: Mutex<Option<Child>>,
     state: Mutex<EngineState>,
     last_error: Mutex<Option<String>>,
+    /// While starting: (current step, start time in ms since the epoch).
+    progress: Mutex<Option<(usize, u64)>>,
 }
 
 impl Engine {
     pub fn new() -> Self {
-        let engine = Self { home: home(), child: Mutex::new(None), state: Mutex::new(EngineState::Stopped), last_error: Mutex::new(None) };
+        let engine = Self {
+            home: home(),
+            child: Mutex::new(None),
+            state: Mutex::new(EngineState::Stopped),
+            last_error: Mutex::new(None),
+            progress: Mutex::new(None),
+        };
         engine.refresh();
         engine
     }
@@ -93,6 +124,31 @@ impl Engine {
 
     pub fn last_error(&self) -> Option<String> {
         self.last_error.lock().unwrap().clone()
+    }
+
+    /// The engine as `state` (which may be ahead of `self.state()` while a start is being set up).
+    pub fn progress(&self, state: EngineState) -> EngineProgress {
+        let p = if state == EngineState::Starting { *self.progress.lock().unwrap() } else { None };
+        EngineProgress {
+            state,
+            step: p.map(|(s, _)| s),
+            step_label: p.map(|(s, _)| START_STEPS[s].0.to_string()),
+            steps: START_STEPS.iter().map(|(label, _)| *label).collect(),
+            started_at: p.map(|(_, t)| t),
+            error: if state == EngineState::Failed { self.last_error() } else { None },
+        }
+    }
+
+    /// The start step reached, from the host agent log written since `offset`.
+    fn step_from_log(&self, offset: u64) -> usize {
+        use std::io::{Seek, SeekFrom};
+        let mut text = String::new();
+        if let Ok(mut f) = std::fs::File::open(self.ha_log()) {
+            if f.seek(SeekFrom::Start(offset)).is_ok() {
+                let _ = f.read_to_string(&mut text);
+            }
+        }
+        START_STEPS.iter().take_while(|(_, done)| !done.is_empty() && text.contains(done)).count()
     }
 
     fn set(&self, s: EngineState) {
@@ -153,8 +209,18 @@ impl Engine {
         if self.refresh() == EngineState::Running {
             return Ok(());
         }
+        // Only log lines written from now on count towards the start steps.
+        let log_offset = std::fs::metadata(self.ha_log()).map(|m| m.len()).unwrap_or(0);
+        let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0);
+        *self.progress.lock().unwrap() = Some((0, now_ms));
         self.set(EngineState::Starting);
         *self.last_error.lock().unwrap() = None;
+        let result = self.boot(log_offset);
+        *self.progress.lock().unwrap() = None;
+        result
+    }
+
+    fn boot(&self, log_offset: u64) -> Result<(), String> {
         if self.lima_status().as_deref() != Some("Running") {
             let child = self
                 .command()
@@ -172,9 +238,15 @@ impl Engine {
                     return Err(self.fail(format!("the host agent exited ({status}); see {}", self.ha_log().display())));
                 }
             }
-            if self.lima_status().as_deref() == Some("Running") && self.docker_ready() {
+            let lima_running = self.lima_status().as_deref() == Some("Running");
+            if lima_running && self.docker_ready() {
                 self.set(EngineState::Running);
                 return Ok(());
+            }
+            // An adopted VM that is still booting is at least past its first step.
+            let step = self.step_from_log(log_offset).max(lima_running as usize);
+            if let Some(p) = self.progress.lock().unwrap().as_mut() {
+                p.0 = step.min(START_STEPS.len() - 1);
             }
             std::thread::sleep(Duration::from_millis(500));
         }
@@ -228,4 +300,38 @@ pub fn home() -> PathBuf {
     std::env::var_os("HULLPORT_HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(|| PathBuf::from("/")).join(".hullport"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    /// Boots the real VM: `cargo test -- --ignored engine_reports_start_steps_in_order`.
+    #[test]
+    #[ignore]
+    fn engine_reports_start_steps_in_order() {
+        let engine = Arc::new(Engine::new());
+        assert_eq!(engine.refresh(), EngineState::Stopped, "stop the VM before running this test");
+        let e = engine.clone();
+        let starter = std::thread::spawn(move || e.start());
+        let mut seen: Vec<usize> = Vec::new();
+        let t0 = Instant::now();
+        while !starter.is_finished() {
+            if let Some(step) = engine.progress(engine.state()).step {
+                if seen.last() != Some(&step) {
+                    eprintln!("{:>5} ms  step {step}: {}", t0.elapsed().as_millis(), START_STEPS[step].0);
+                    seen.push(step);
+                }
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        starter.join().unwrap().unwrap();
+        eprintln!("{:>5} ms  running", t0.elapsed().as_millis());
+        assert_eq!(engine.state(), EngineState::Running);
+        // "Starting Docker" only shows when Docker lags behind the guest agent (e.g. the first boot installs it).
+        assert!(seen.starts_with(&[0, 1]) && seen.windows(2).all(|w| w[0] < w[1]), "steps go forward in order: {seen:?}");
+        assert!(engine.progress(engine.state()).step.is_none(), "no step once running");
+        engine.stop().unwrap();
+    }
 }

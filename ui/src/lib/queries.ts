@@ -1,7 +1,7 @@
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useSyncExternalStore } from "react";
-import { api, errMsg } from "./api";
+import { api, errMsg, type EngineProgress } from "./api";
 import { toast } from "./toast";
 import type { ConnStatus, EngineEvent } from "./types";
 
@@ -29,6 +29,16 @@ export const getStatus = () => status;
 export const useStatus = () =>
   useSyncExternalStore((cb) => { statusListeners.add(cb); return () => statusListeners.delete(cb); }, () => status);
 export const useConnected = () => useStatus().state === "connected";
+
+// ---- Hullport's own engine (pushed by the backend while it starts and stops) ----
+let engine: EngineProgress = { state: "stopped", steps: [] };
+const engineListeners = new Set<() => void>();
+function setEngine(e: EngineProgress) {
+  engine = e;
+  engineListeners.forEach((l) => l());
+}
+export const useEngineProgress = () =>
+  useSyncExternalStore((cb) => { engineListeners.add(cb); return () => engineListeners.delete(cb); }, () => engine);
 
 const KEYS_BY_KIND: Record<string, string[]> = {
   container: ["containers", "container", "networks-detail", "volumes-usage", "images"],
@@ -62,6 +72,8 @@ export function useEngineBridge() {
     const unsubs: (() => void)[] = [];
     api.status().then((s) => alive && setStatus(s)).catch(() => {});
     listen<ConnStatus>("docker://status", (e) => setStatus(e.payload)).then((u) => unsubs.push(u));
+    api.engineStatus().then((e) => alive && setEngine(e)).catch(() => {});
+    listen<EngineProgress>("engine-state", (e) => setEngine(e.payload)).then((u) => unsubs.push(u));
     listen<EngineEvent>("docker://event", (e) => {
       const ev = e.payload;
       // exec_* and health events are noisy and don't change lists.

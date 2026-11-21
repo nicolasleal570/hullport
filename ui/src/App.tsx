@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar, SECTIONS } from "./components/Sidebar";
 import { MenuHost } from "./components/menu";
 import { ConfirmHost } from "./components/dialog";
 import { Button, Empty, cx } from "./components/ui";
-import { IconPlug, IconSpinner, IconX } from "./components/icons";
-import { api } from "./lib/api";
-import { refreshAll, useEngineBridge, useStatus } from "./lib/queries";
+import { IconCheck, IconPlug, IconSpinner, IconX } from "./components/icons";
+import { api, type EngineProgress } from "./lib/api";
+import { refreshAll, useEngineBridge, useEngineProgress, useStatus } from "./lib/queries";
 import { getUi, go, useUi } from "./lib/store";
 import { dismiss, useToasts } from "./lib/toast";
 import { ContainersView } from "./features/containers/ContainersView";
@@ -57,15 +57,44 @@ export default function App() {
   );
 }
 
+/** Hullport's engine is booting: show its steps instead of a connection error. */
+function EngineStarting({ engine }: { engine: EngineProgress }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const secs = engine.startedAt ? Math.max(0, Math.round((now - engine.startedAt) / 1000)) : null;
+  const current = engine.step ?? 0;
+  return (
+    <Empty icon={<IconSpinner size={30} />} title="Starting the Hullport engine…">
+      <div className="inline-flex flex-col gap-1.5 text-left mt-1" data-testid="engine-starting">
+        {engine.steps.map((label, i) => (
+          <div key={label} className={cx("flex items-center gap-2", i > current && "text-fg3")}>
+            <span className="w-4 flex justify-center">
+              {i < current ? <IconCheck size={13} className="text-ok" /> : i === current ? <IconSpinner size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-fg3" />}
+            </span>
+            {label}
+          </div>
+        ))}
+      </div>
+      {secs != null && <div className="mt-3 text-fg3 tabular-nums">{secs} s · usually about 10 s</div>}
+    </Empty>
+  );
+}
+
 function EngineDown({ section }: { section: string }) {
   const st = useStatus();
+  const engine = useEngineProgress();
   const title = SECTIONS.find((s) => s.id === section)?.label ?? "";
   return (
     <div className="h-full flex flex-col" data-section={section}>
       <div data-tauri-drag-region className="h-[52px] shrink-0 flex items-center pl-4 border-b border-line">
         <h1 data-tauri-drag-region className="text-[15px] font-semibold">{title}</h1>
       </div>
-      {st.state === "connecting" ? (
+      {engine.state === "starting" ? (
+        <EngineStarting engine={engine} />
+      ) : st.state === "connecting" ? (
         <Empty icon={<IconSpinner size={30} />} title="Connecting to Docker…">{st.host || "Looking for the engine"}</Empty>
       ) : (
         <Empty

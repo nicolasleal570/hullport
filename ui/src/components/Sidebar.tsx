@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { api } from "../lib/api";
-import { run, useContainers, useImages, useNetworks, useStatus, useVolumes } from "../lib/queries";
+import { run, useContainers, useEngineProgress, useImages, useNetworks, useStatus, useVolumes } from "../lib/queries";
 import { go, useUi, type Section } from "../lib/store";
 import { IconBuilds, IconCheck, IconPlug, IconChevronDown, IconContainers, IconImages, IconNetworks, IconRefresh, IconVolumes } from "./icons";
 import { openMenuAt, type MenuItem } from "./menu";
@@ -76,9 +76,12 @@ export function Sidebar() {
 
 function EngineStatus() {
   const st = useStatus();
+  const engine = useEngineProgress();
   const ctx = useQuery({ queryKey: ["contexts", st.state], queryFn: api.contexts });
-  const tone = st.state === "connected" ? "ok" : st.state === "connecting" ? "warn" : "bad";
-  const label = st.state === "connected" ? "Connected" : st.state === "connecting" ? "Connecting…" : "Disconnected";
+  // Not connected yet because Hullport's engine is still booting: that's progress, not an error.
+  const booting = st.state !== "connected" && engine.state === "starting";
+  const tone = st.state === "connected" ? "ok" : st.state === "connecting" || booting ? "warn" : "bad";
+  const label = st.state === "connected" ? "Connected" : booting ? "Starting engine…" : st.state === "connecting" ? "Connecting…" : "Disconnected";
 
   const openContexts = (el: HTMLElement) => {
     const list = ctx.data;
@@ -105,7 +108,7 @@ function EngineStatus() {
   return (
     <div className="m-2 p-2 rounded-[9px] border border-line bg-fg/[0.03]" data-testid="engine-status">
       <div className="flex items-center gap-2">
-        <Dot tone={tone} pulse={st.state === "connecting"} />
+        <Dot tone={tone} pulse={st.state === "connecting" || booting} />
         <span className="text-[12px] font-medium" data-testid="engine-state">{label}</span>
         {st.serverVersion && <span className="text-[11px] text-fg3 ml-auto tabular-nums">v{st.serverVersion}</span>}
       </div>
@@ -123,7 +126,8 @@ function EngineStatus() {
           {st.fallbackFrom} isn't answering; using {st.context} for now.
         </div>
       )}
-      {st.state === "disconnected" && st.error && (
+      {booting && engine.stepLabel && <div className="mt-1 text-[11px] text-fg2 leading-snug">{engine.stepLabel}…</div>}
+      {st.state === "disconnected" && !booting && st.error && (
         <div className="mt-1 text-[11px] text-bad/90 leading-snug line-clamp-3" title={st.error}>{st.error}</div>
       )}
     </div>

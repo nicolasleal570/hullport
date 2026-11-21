@@ -178,6 +178,7 @@ fn main() {
             cmd::system::exit_app,
             cmd::system::docker_cli_path,
             cmd::engines::engines_overview,
+            cmd::engines::engine_status,
             cmd::engines::engine_start,
             cmd::engines::engine_stop,
             cmd::containers::list_containers,

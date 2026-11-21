@@ -25,6 +25,7 @@ export const api = {
 
   // engines
   engines: () => call<EnginesOverview>("engines_overview"),
+  engineStatus: () => call<EngineProgress>("engine_status"),
   engineStart: () => call<void>("engine_start"),
   engineStop: () => call<void>("engine_stop"),
 
@@ -109,6 +110,12 @@ export function errMsg(e: unknown): string {
 }
 
 export type EngineState = "notInstalled" | "stopped" | "starting" | "running" | "stopping" | "failed";
+/** Hullport's engine, with its start-up step while it starts. */
+export interface EngineProgress {
+  state: EngineState; step?: number | null; stepLabel?: string | null; steps: string[];
+  /** ms since the epoch */
+  startedAt?: number | null; error?: string | null;
+}
 export interface HullportEngine {
   state: EngineState; error?: string | null; socket: string; context: string;
   cpus?: string | null; memory?: string | null; disk?: string | null; managed: boolean;

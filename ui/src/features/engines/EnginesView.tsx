@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { api, errMsg, type EngineInfo, type EngineState, type HullportEngine } from "../../lib/api";
-import { useStatus } from "../../lib/queries";
+import { useEngineProgress, useStatus } from "../../lib/queries";
 import type { ConnStatus } from "../../lib/types";
 import { toast } from "../../lib/toast";
 import { Badge, Button, Dot, ErrorBox, Loading } from "../../components/ui";
@@ -53,7 +53,10 @@ export function EnginesView() {
   );
 }
 
-function HullportCard({ e, active }: { e: HullportEngine; active: boolean }) {
+function HullportCard({ e: polled, active }: { e: HullportEngine; active: boolean }) {
+  // Events are fresher than the 4 s poll, and carry the start-up step.
+  const live = useEngineProgress();
+  const e = { ...polled, state: live.steps.length ? live.state : polled.state };
   const tone = e.state === "running" ? "ok" : e.state === "failed" ? "bad" : e.state === "starting" || e.state === "stopping" ? "warn" : "idle";
   const run = (label: string, fn: () => Promise<void>) => fn().catch((err) => toast(`${label} failed: ${errMsg(err)}`, "error"));
   const size = (v?: string | null) => v?.replace(/([0-9.])([A-Za-z])/, "$1 $2");
@@ -71,7 +74,9 @@ function HullportCard({ e, active }: { e: HullportEngine; active: boolean }) {
             {e.cpus && e.memory && e.disk ? `${e.cpus} CPUs · ${size(e.memory)} memory · ${size(e.disk)} disk for Docker data` : "Lima VM with Docker Engine"}
           </div>
         </div>
-        <div className="text-[12px] text-fg2 w-[110px] text-right" data-testid="hullport-engine-state">{stateLabel[e.state]}</div>
+        <div className="text-[12px] text-fg2 min-w-[110px] text-right" data-testid="hullport-engine-state">
+          {e.state === "starting" && live.stepLabel ? `${live.stepLabel}…` : stateLabel[e.state]}
+        </div>
         {e.state === "running" && !active && <Button onClick={() => run("Switch engine", () => api.setContext(e.context))}>Use</Button>}
         {e.managed && (e.state === "running" || e.state === "stopping") && (
           <Button busy={e.state === "stopping"} onClick={() => run("Stop engine", api.engineStop)}>Stop</Button>

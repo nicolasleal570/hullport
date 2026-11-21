@@ -45,7 +45,8 @@ pub fn setup(app: &AppHandle, engine: Arc<Engine>) -> tauri::Result<()> {
         let mut last = None;
         loop {
             let s = engine.refresh();
-            if last != Some(s) {
+            let step = engine.progress(s).step;
+            if last != Some((s, step)) {
                 show_state(&handle, s);
                 // The engine is up: move the app onto it if it's disconnected or on a stand-in.
                 if s == EngineState::Running {
@@ -55,9 +56,10 @@ pub fn setup(app: &AppHandle, engine: Arc<Engine>) -> tauri::Result<()> {
                         }
                     }
                 }
-                last = Some(s);
+                last = Some((s, step));
             }
-            std::thread::sleep(Duration::from_secs(2));
+            // Follow start-up closely; otherwise only notice outside changes.
+            std::thread::sleep(Duration::from_millis(if s == EngineState::Starting { 500 } else { 2000 }));
         }
     });
 
@@ -123,7 +125,11 @@ fn show_state(app: &AppHandle, s: EngineState) {
     if lc.quitting.load(Ordering::SeqCst) {
         return;
     }
-    let _ = lc.status.set_text(format!("Engine: {}", s.label()));
+    let progress = lc.engine.progress(s);
+    let _ = lc.status.set_text(match &progress.step_label {
+        Some(step) => format!("Engine: {step}…"),
+        None => format!("Engine: {}", s.label()),
+    });
     let (text, enabled) = match s {
         EngineState::Running => ("Stop Engine", true),
         EngineState::Stopped | EngineState::Failed => ("Start Engine", true),
@@ -139,7 +145,7 @@ fn show_state(app: &AppHandle, s: EngineState) {
         };
         let _ = tray.set_tooltip(Some(tip));
     }
-    let _ = app.emit("engine-state", s);
+    let _ = app.emit("engine-state", progress);
 }
 
 /// The engine, when this run has the menu bar lifecycle (not in launch modes like --verify).

@@ -95,3 +95,15 @@ pub fn engine_start(app: AppHandle) {
 pub fn engine_stop(app: AppHandle) {
     lifecycle::stop_engine(&app);
 }
+
+/// The engine's state and start-up progress; updates arrive as `engine-state` events.
+#[tauri::command]
+pub fn engine_status(app: AppHandle) -> crate::engine::EngineProgress {
+    match lifecycle::engine(&app) {
+        Some(e) => e.progress(e.state()),
+        None => {
+            let e = Engine::new();
+            e.progress(e.state())
+        }
+    }
+}
