@@ -31,6 +31,8 @@ pub struct ConnStatus {
     pub cpus: Option<i64>,
     pub mem_total: Option<i64>,
     pub containers_running: Option<i64>,
+    /// The chosen context, when it didn't answer and another engine is used instead for now.
+    pub fallback_from: Option<String>,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -62,7 +64,7 @@ impl DockerManager {
                 docker: None,
                 status: ConnStatus { state: "connecting".into(), ..Default::default() },
             }),
-            preferred: RwLock::new(preferred),
+            preferred: RwLock::new(context::normalize(preferred)),
             wake: Notify::new(),
             app: OnceLock::new(),
         })
@@ -96,7 +98,7 @@ impl DockerManager {
     }
 
     pub fn set_context(&self, name: Option<String>) {
-        *self.preferred.write().unwrap() = name;
+        *self.preferred.write().unwrap() = context::normalize(name);
         self.wake.notify_one();
     }
 
@@ -115,8 +117,34 @@ impl DockerManager {
         }
     }
 
+    /// Connect to the first engine that answers (see `context::candidates`). On failure, report
+    /// the first candidate's error: that's the engine the user expects.
     async fn connect_once(&self) -> Result<(Docker, ConnStatus), (String, String, String)> {
-        let (ctx, host) = context::resolve(self.preferred().as_deref());
+        let preferred = self.preferred();
+        let mut first_err = None;
+        for (ctx, host) in context::candidates(preferred.as_deref()) {
+            match Self::connect_to(&ctx, &host).await {
+                Ok((docker, mut status)) => {
+                    status.fallback_from = preferred.filter(|p| *p != ctx);
+                    return Ok((docker, status));
+                }
+                Err(e) => {
+                    first_err.get_or_insert(e);
+                }
+            }
+        }
+        Err(first_err.unwrap_or_else(|| ("default".into(), String::new(), "No Docker engine found".into())))
+    }
+
+    /// Whether this connection is a stand-in for the chosen context, or "Automatic" isn't on
+    /// Hullport's own engine: then a better engine is worth switching to when it comes up.
+    pub fn could_do_better(&self) -> bool {
+        let st = self.status();
+        st.state != "connected" || st.fallback_from.is_some() || (self.preferred().is_none() && st.context != context::HULLPORT)
+    }
+
+    async fn connect_to(ctx: &str, host: &str) -> Result<(Docker, ConnStatus), (String, String, String)> {
+        let (ctx, host) = (ctx.to_string(), host.to_string());
         let fail = |msg: String| (ctx.clone(), host.clone(), msg);
         let docker = if host.starts_with("unix://") {
             Docker::connect_with_unix(&host, 120, API_DEFAULT_VERSION)
@@ -149,6 +177,7 @@ impl DockerManager {
             cpus: info.as_ref().and_then(|i| i.ncpu),
             mem_total: info.as_ref().and_then(|i| i.mem_total),
             containers_running: info.as_ref().and_then(|i| i.containers_running),
+            fallback_from: None,
         };
         Ok((docker, status))
     }

@@ -84,7 +84,7 @@ function EngineStatus() {
     const list = ctx.data;
     const items: MenuItem[] = [];
     items.push({
-      label: `Follow Docker CLI${list ? ` (${list.cliCurrent})` : ""}`,
+      label: "Automatic (Hullport engine first)",
       icon: !list?.selected ? <IconCheck size={13} /> : undefined,
       onClick: () => run("Switch context", () => api.setContext(null)),
     });
@@ -118,6 +118,11 @@ function EngineStatus() {
         <span className="text-[11.5px] text-fg2 truncate flex-1" data-testid="engine-context">{st.context || "—"}</span>
         <IconChevronDown size={11} className="text-fg3" />
       </button>
+      {st.state === "connected" && st.fallbackFrom && (
+        <div className="mt-1 text-[11px] text-warn leading-snug" data-testid="engine-fallback">
+          {st.fallbackFrom} isn't answering; using {st.context} for now.
+        </div>
+      )}
       {st.state === "disconnected" && st.error && (
         <div className="mt-1 text-[11px] text-bad/90 leading-snug line-clamp-3" title={st.error}>{st.error}</div>
       )}

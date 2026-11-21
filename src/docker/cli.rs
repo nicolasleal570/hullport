@@ -47,7 +47,8 @@ pub fn command(context: &str, host: &str) -> Result<tokio::process::Command, Str
     cmd.env("PATH", path);
     cmd.env_remove("DOCKER_CONTEXT");
     cmd.env_remove("DOCKER_HOST");
-    if context.starts_with("socket:") || context == "default" {
+    // Discovered sockets (Hullport's engine among them) aren't CLI contexts: point at the socket.
+    if context.starts_with("socket:") || context == "default" || context == super::context::HULLPORT {
         cmd.env("DOCKER_HOST", host);
     } else {
         cmd.arg("--context").arg(context);

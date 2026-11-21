@@ -67,7 +67,7 @@ fn socket_available(host: &str) -> bool {
 fn well_known_sockets() -> Vec<(String, String, PathBuf)> {
     let h = home();
     vec![
-        ("hullport".into(), "Hullport engine socket".into(), crate::engine::home().join("run/docker.sock")),
+        (HULLPORT.into(), "Hullport engine".into(), crate::engine::home().join("run/docker.sock")),
         ("orbstack".into(), "OrbStack engine socket".into(), h.join(".orbstack/run/docker.sock")),
         ("desktop".into(), "Docker Desktop engine socket".into(), h.join(".docker/run/docker.sock")),
         ("colima".into(), "Colima engine socket".into(), h.join(".colima/default/docker.sock")),
@@ -121,12 +121,13 @@ pub fn list_contexts() -> Vec<DockerContext> {
     found.sort_by(|a, b| a.name.cmp(&b.name));
     out.extend(found);
 
-    // Sockets that exist but no context points at.
+    // Sockets that exist but no named context points at. Hullport's own engine is always
+    // listed as "hullport", even when DOCKER_HOST (the "default" context) points at it.
     for (key, desc, path) in well_known_sockets() {
         let host = format!("unix://{}", path.display());
-        if path.exists() && !out.iter().any(|c| same_host(&c.host, &host)) {
+        if path.exists() && !out.iter().any(|c| c.name != "default" && same_host(&c.host, &host)) {
             out.push(DockerContext {
-                name: format!("socket:{key}"),
+                name: if key == HULLPORT { key } else { format!("socket:{key}") },
                 description: desc,
                 host,
                 is_cli_current: false,
@@ -153,6 +154,38 @@ fn same_host(a: &str, b: &str) -> bool {
         }
     };
     canon(a) == canon(b)
+}
+
+/// Name of Hullport's own engine in the context list.
+pub const HULLPORT: &str = "hullport";
+
+/// Context names saved by older versions, mapped to today's names.
+pub fn normalize(name: Option<String>) -> Option<String> {
+    name.map(|n| if n == "socket:hullport" { HULLPORT.to_string() } else { n })
+}
+
+/// Endpoints to try, best first: the chosen context, then Hullport's own engine, then the
+/// Docker CLI's current context, then any other engine whose socket exists. With no choice
+/// ("Automatic"), Hullport's engine comes first.
+pub fn candidates(preferred: Option<&str>) -> Vec<(String, String)> {
+    let contexts = list_contexts();
+    let cur = cli_current_context();
+    let first = [
+        preferred.and_then(|p| contexts.iter().find(|c| c.name == p)),
+        contexts.iter().find(|c| c.name == HULLPORT),
+        contexts.iter().find(|c| c.name == cur),
+    ];
+    let mut order: Vec<&DockerContext> = Vec::new();
+    for c in first.into_iter().flatten().chain(contexts.iter().filter(|c| c.available)) {
+        if !order.iter().any(|o| o.name == c.name) {
+            order.push(c);
+        }
+    }
+    let mut out: Vec<(String, String)> = order.into_iter().map(|c| (c.name.clone(), c.host.clone())).collect();
+    if out.is_empty() {
+        out.push(("default".into(), default_host()));
+    }
+    out
 }
 
 /// Resolve a context name to its endpoint. Falls back to the CLI's current context.

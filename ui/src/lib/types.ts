@@ -37,6 +37,8 @@ export interface ConnStatus {
   context: string; host: string; error?: string | null;
   serverVersion?: string | null; apiVersion?: string | null; os?: string | null; arch?: string | null;
   engineName?: string | null; cpus?: number | null; memTotal?: number | null; containersRunning?: number | null;
+  /** The chosen context, when it didn't answer and another engine is used instead for now. */
+  fallbackFrom?: string | null;
 }
 export interface DockerContext {
   name: string; description: string; host: string; isCliCurrent: boolean; available: boolean; source: string;
