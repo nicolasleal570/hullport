@@ -114,6 +114,14 @@ cmd_install() {
       -e "s|@HULLPORT_HOME@|$HULLPORT_HOME|" \
       "$ROOT/engine/hullport.yaml" >"$HULLPORT_HOME/hullport.yaml"
 
+  # Lima keeps its own copy of the config in the instance; an existing VM picks up changes on its next start.
+  local current="$LIMA_HOME/$INSTANCE/lima.yaml"
+  if [ -f "$current" ] && ! cmp -s "$HULLPORT_HOME/hullport.yaml" "$current"; then
+    "$LIMACTL" --tty=false validate "$HULLPORT_HOME/hullport.yaml"
+    cp "$HULLPORT_HOME/hullport.yaml" "$current"
+    echo "  updated the $INSTANCE VM config"
+  fi
+
   # vz refuses to start unless limactl's signature carries this entitlement.
   if codesign -d --entitlements - "$LIMACTL" 2>/dev/null | grep -q com.apple.security.virtualization; then
     echo "  limactl carries com.apple.security.virtualization"

@@ -55,6 +55,17 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
+    # Tools such as `supabase start` bind-mount the socket they connect to, by its Mac path,
+    # into containers. dockerd resolves that path here in the VM, where the Mac's socket can't
+    # cross virtiofs. A tmpfs over the folder, seen only inside the VM, makes the same path
+    # lead to the real socket. The Mac's copy of the folder is untouched.
+    run="@HULLPORT_HOME@/run"
+    mountpoint -q "$run" || mount -t tmpfs -o mode=0755,size=1m hullport-run "$run"
+    ln -sfn /var/run/docker.sock "$run/docker.sock"
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
     want="@GUEST_DOCKER_VERSION@"
     have="$(dpkg-query -W -f='${Version}' docker-ce 2>/dev/null || true)"
     if [ "$have" != "$want" ]; then
