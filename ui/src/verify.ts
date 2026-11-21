@@ -206,6 +206,26 @@ export async function verify(mode: LaunchMode) {
     return `${name} (${net.IPAM?.Config?.[0]?.Subnet}) connected ${cname} at ${member?.IPv4Address}, disconnected, deleted`;
   });
 
+  await step("mount the engine's own socket into a container", async () => {
+    // Tools like `supabase start` bind-mount the socket they talk to, by its path on the Mac.
+    // The engine resolves that path inside its VM, so it must lead to the real socket there too.
+    const host = getStatus().host;
+    if (!host.startsWith("unix://")) return `skipped: ${host} is not a unix socket`;
+    const sock = host.slice("unix://".length);
+    const name = `${P}-sock`;
+    // Registered first: a failed start still leaves the created container behind.
+    cleanup.push(() => api.removeContainer(name, true, false));
+    const r = await api.createContainer({
+      image: "alpine:latest", name, command: "test -S /var/run/docker.sock",
+      env: [], ports: [], mounts: [{ source: sock, target: "/var/run/docker.sock", readOnly: true }],
+      labels: [{ key: "dev.hullport.verify", value: tag }], autoRemove: false, start: true, restartPolicy: "no",
+    });
+    const st = await until(async () => { const s = (await api.inspectContainer(r.id)).State; return s?.Status === "exited" && s; }, 15000);
+    assert(st, "container did not finish");
+    assert(st && st.ExitCode === 0, `${sock} is not a socket inside the container (exit ${st && st.ExitCode})`);
+    return `${sock} mounted at /var/run/docker.sock is a live socket inside the container`;
+  });
+
   if (mode.external) {
     await step("external CLI changes appear in the app", async () => {
       go("volumes");
