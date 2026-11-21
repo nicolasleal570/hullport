@@ -14,6 +14,8 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 pub const INSTANCE: &str = "hullport";
+/// The disk with Docker's data (see engine/hullport.yaml).
+const DATA_DISK: &str = "hullport-data";
 const START_TIMEOUT: Duration = Duration::from_secs(300);
 const EXIT_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -199,6 +201,21 @@ impl Engine {
         }
         self.set(EngineState::Stopped);
         Ok(())
+    }
+
+    /// CPUs and memory from the VM's config, and the size of the disk that holds Docker's data,
+    /// e.g. ("4", "8GiB", "60GiB").
+    pub fn resources(&self) -> Option<(String, String, String)> {
+        let yaml = std::fs::read_to_string(self.lima_home().join(INSTANCE).join("lima.yaml")).ok()?;
+        let top = |key: &str| {
+            yaml.lines()
+                .find_map(|l| l.strip_prefix(key).and_then(|v| v.strip_prefix(':')))
+                .map(|v| v.split('#').next().unwrap_or("").trim().trim_matches('"').to_string())
+                .filter(|v| !v.is_empty())
+        };
+        // A sparse file: its length is the disk's size, not the space it takes on the Mac.
+        let data = std::fs::metadata(self.lima_home().join("_disks").join(DATA_DISK).join("datadisk")).ok()?;
+        Some((top("cpus")?, top("memory")?, format!("{}GiB", data.len() >> 30)))
     }
 
     fn ha_log(&self) -> PathBuf {

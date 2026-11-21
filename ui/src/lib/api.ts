@@ -25,8 +25,8 @@ export const api = {
 
   // engines
   engines: () => call<EnginesOverview>("engines_overview"),
-  engineTask: (task: "install-colima" | "start-colima" | "stop-colima", opts: { cpus?: number; memoryGb?: number; diskGb?: number }, on: (e: EngineTaskEvent) => void) =>
-    stream("engine_task", { task, cpus: opts.cpus ?? null, memoryGb: opts.memoryGb ?? null, diskGb: opts.diskGb ?? null }, on),
+  engineStart: () => call<void>("engine_start"),
+  engineStop: () => call<void>("engine_stop"),
 
   // containers
   containers: () => call<T.ContainerSummary[]>("list_containers"),
@@ -108,6 +108,10 @@ export function errMsg(e: unknown): string {
   return String(e);
 }
 
-export interface EngineInfo { id: string; name: string; installed: boolean; running: boolean; socket: string; context: string; openSource: boolean; note: string }
-export interface EnginesOverview { engines: EngineInfo[]; brew?: string | null; dockerCli?: string | null; cliDependsOnOrbstack: boolean; buildxAvailable: boolean }
-export type EngineTaskEvent = { type: "line"; line: string } | { type: "done"; ok: boolean; error?: string | null };
+export type EngineState = "notInstalled" | "stopped" | "starting" | "running" | "stopping" | "failed";
+export interface HullportEngine {
+  state: EngineState; error?: string | null; socket: string; context: string;
+  cpus?: string | null; memory?: string | null; disk?: string | null; managed: boolean;
+}
+export interface EngineInfo { id: string; name: string; installed: boolean; running: boolean; socket: string; context: string; note: string }
+export interface EnginesOverview { hullport: HullportEngine; others: EngineInfo[]; dockerCli?: string | null }

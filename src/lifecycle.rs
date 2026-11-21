@@ -4,6 +4,7 @@
 
 use crate::engine::{Engine, EngineState};
 use crate::login_item;
+use crate::state::AppState;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -46,6 +47,14 @@ pub fn setup(app: &AppHandle, engine: Arc<Engine>) -> tauri::Result<()> {
             let s = engine.refresh();
             if last != Some(s) {
                 show_state(&handle, s);
+                // The engine is up: move the app onto it if it's disconnected or on a stand-in.
+                if s == EngineState::Running {
+                    if let Some(st) = handle.try_state::<AppState>() {
+                        if st.docker.could_do_better() {
+                            st.docker.reconnect();
+                        }
+                    }
+                }
                 last = Some(s);
             }
             std::thread::sleep(Duration::from_secs(2));
@@ -133,7 +142,12 @@ fn show_state(app: &AppHandle, s: EngineState) {
     let _ = app.emit("engine-state", s);
 }
 
-fn start_engine(app: &AppHandle) {
+/// The engine, when this run has the menu bar lifecycle (not in launch modes like --verify).
+pub fn engine(app: &AppHandle) -> Option<Arc<Engine>> {
+    app.try_state::<Lifecycle>().map(|lc| lc.engine.clone())
+}
+
+pub fn start_engine(app: &AppHandle) {
     let Some(lc) = app.try_state::<Lifecycle>() else { return };
     let engine = lc.engine.clone();
     let handle = app.clone();
@@ -146,7 +160,7 @@ fn start_engine(app: &AppHandle) {
     });
 }
 
-fn stop_engine(app: &AppHandle) {
+pub fn stop_engine(app: &AppHandle) {
     let Some(lc) = app.try_state::<Lifecycle>() else { return };
     let engine = lc.engine.clone();
     let handle = app.clone();
