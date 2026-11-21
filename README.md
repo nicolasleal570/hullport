@@ -1,23 +1,23 @@
-# Berth
+# Hullport
 
 > **For private use.** Berth is your own Docker management app for macOS, built for use on your own computer.
 
 
 A lightweight macOS Docker manager for **Containers, Images, Volumes, Builds and Networks**.
-Berth connects to an existing Docker Engine (OrbStack, Docker Desktop,
+Hullport connects to an existing Docker Engine (OrbStack, Docker Desktop,
 Colima, Rancher Desktop…) and never runs its own container runtime.
 
 ## Open it
 
-- **Easiest:** double-click **`Open Berth.command`** in this folder (it builds the app the first time if needed).
-- Or open **`target/release/bundle/macos/Berth.app`** in Finder. Drag it into your Applications folder to keep it.
+- **Easiest:** double-click **`Open Hullport.command`** in this folder (it builds the app the first time if needed).
+- Or open **`target/release/bundle/macos/Hullport.app`** in Finder. Drag it into your Applications folder to keep it.
 - First launch: macOS may say the app is from an unidentified developer (it isn't signed). Right-click the app → **Open** → **Open**.
-- OrbStack (or another Docker engine) must be running; Berth connects to it automatically.
+- OrbStack (or another Docker engine) must be running; Hullport connects to it automatically.
 
 ## Replacing OrbStack
 
-Berth is the app; an **engine** runs the containers. Open **Engines** in the sidebar to install and start
-**Colima** (free, open source) with Homebrew; Berth switches to it automatically. Data stored in OrbStack isn't
+Hullport is the app; an **engine** runs the containers. Open **Engines** in the sidebar to install and start
+**Colima** (free, open source) with Homebrew; Hullport switches to it automatically. Data stored in OrbStack isn't
 moved. See `HANDOFF.md` for the full steps and caveats.
 
 ## Use it
@@ -34,8 +34,8 @@ also need the `docker` CLI with buildx.
 ```sh
 npm install
 npm run build          # type-check + bundle the interface into dist/
-cargo build            # debug app at target/debug/berth
-npm run tauri build    # signed-less Berth.app in target/release/bundle/macos/
+cargo build            # debug app at target/debug/hullport
+npm run tauri build    # signed-less Hullport.app in target/release/bundle/macos/
 ```
 
 `cargo build` alone works once `dist/` exists (the interface is embedded at compile time).
@@ -43,14 +43,14 @@ npm run tauri build    # signed-less Berth.app in target/release/bundle/macos/
 ### Check modes
 
 ```sh
-target/debug/berth --screenshot shots/now.png [--section images]   # draws ~120 frames, saves a PNG, exits
-target/debug/berth --self-test shots/self-test.json                # walks the sections, creates+deletes a throwaway volume
-target/debug/berth --verify shots/verify.json --fixtures "$PWD/tests/fixtures" [--external <volume-name>]
+target/debug/hullport --screenshot shots/now.png [--section images]   # draws ~120 frames, saves a PNG, exits
+target/debug/hullport --self-test shots/self-test.json                # walks the sections, creates+deletes a throwaway volume
+target/debug/hullport --verify shots/verify.json --fixtures "$PWD/tests/fixtures" [--external <volume-name>]
 ```
 
 `--verify` runs end-to-end checks against the real engine (container lifecycle, logs, exec + PTY, stats, pull/tag,
 volume browse/export, BuildKit build + cancel, network connect/disconnect). It only creates resources named
-`berth-verify-*` and removes them afterwards. With `--external NAME` it creates a marker volume `NAME-ready`
+`hullport-verify-*` and removes them afterwards. With `--external NAME` it creates a marker volume `NAME-ready`
 and waits for a volume `NAME` to be created and removed with the docker CLI, to prove external changes show up.
 
 ## Architecture
@@ -73,5 +73,5 @@ ui/src/                  React + TypeScript + Tailwind interface
 - Streaming (logs, stats, pulls, terminal, builds) uses Tauri channels; every stream has a cancel handle.
 - Builds run `docker buildx build --progress=rawjson` so the UI can show BuildKit's real step graph; cancel sends SIGINT.
 - Volume files are read through a short-lived `alpine` helper container that mounts the volume **read-only**,
-  labelled `dev.berth.helper` and removed when the browser closes (and on next launch if left behind).
+  labelled `dev.hullport.helper` and removed when the browser closes (and on next launch if left behind).
 
