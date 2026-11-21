@@ -103,7 +103,21 @@ hostResolver:
   hosts:
     host.docker.internal: host.lima.internal
 
-# The VM's Docker socket, exposed on the Mac. Lima forwards it over vsock, through its guest agent.
+# Rules are checked in order and the first match wins. Anything not listed falls through to Lima's
+# default: every TCP/UDP port listening in the VM appears on the Mac's 127.0.0.1.
 portForwards:
+# Ubuntu's own services (mDNS and chrony), not containers: keep them off the Mac. With
+# guestIPMustBeZero false, guestIP 0.0.0.0 matches the port on any guest address (127.0.0.1, ::1, ...).
+- guestIP: 0.0.0.0
+  guestIPMustBeZero: false
+  guestPort: 5353
+  proto: udp
+  ignore: true
+- guestIP: 0.0.0.0
+  guestIPMustBeZero: false
+  guestPort: 323
+  proto: udp
+  ignore: true
+# The VM's Docker socket, exposed on the Mac. Lima forwards it over vsock, through its guest agent.
 - guestSocket: /var/run/docker.sock
   hostSocket: "@HULLPORT_HOME@/run/docker.sock"
