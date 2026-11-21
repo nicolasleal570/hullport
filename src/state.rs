@@ -27,6 +27,8 @@ pub struct LaunchMode {
     pub section: Option<String>,
     /// `--context NAME`: Docker context for this run only, instead of the saved preference.
     pub context: Option<String>,
+    /// `--background`: start in the menu bar without opening the window (used at login).
+    pub background: bool,
 }
 
 pub struct AppState {

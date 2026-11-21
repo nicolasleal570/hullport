@@ -3,7 +3,10 @@
 
 mod cmd;
 mod docker;
+mod engine;
 mod error;
+mod lifecycle;
+mod login_item;
 mod state;
 mod store;
 
@@ -14,7 +17,7 @@ use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 fn parse_launch() -> LaunchMode {
     let args: Vec<String> = std::env::args().collect();
-    let mut mode = LaunchMode { mode: "normal".into(), path: None, fixtures: None, external: None, section: None, context: None };
+    let mut mode = LaunchMode { mode: "normal".into(), path: None, fixtures: None, external: None, section: None, context: None, background: false };
     let mut i = 1;
     while i < args.len() {
         let flag = args[i].as_str();
@@ -51,6 +54,7 @@ fn parse_launch() -> LaunchMode {
                 mode.context = value;
                 i += 1;
             }
+            "--background" => mode.background = true,
             _ => {}
         }
         i += 1;
@@ -70,14 +74,30 @@ fn absolute(p: String) -> String {
 fn main() {
     let launch = parse_launch();
     let quiet = launch.mode != "normal";
+    let background = launch.background && !quiet;
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+    if !quiet {
+        // One copy owns the VM; opening the app again just shows its window.
+        builder = builder
+            .plugin(tauri_plugin_single_instance::init(|app, _, _| lifecycle::show_main(app)))
+            .on_window_event(|window, event| {
+                // Closing the window keeps the engine running; the menu bar icon stays.
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    if window.label() == "main" && !lifecycle::quitting(window.app_handle()) {
+                        api.prevent_close();
+                        lifecycle::hide_main(window.app_handle());
+                    }
+                }
+            });
+    }
+    builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
             #[cfg(target_os = "macos")]
-            if quiet {
-                // Never steal focus while a check mode runs.
+            if quiet || background {
+                // Never steal focus while a check mode runs, or at login.
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
             let data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("hullport"));
@@ -119,8 +139,8 @@ fn main() {
                 .title("Hullport")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(920.0, 560.0)
-                .focused(!quiet)
-                .visible(true);
+                .focused(!quiet && !background)
+                .visible(!background);
             #[cfg(target_os = "macos")]
             {
                 use tauri::utils::config::WindowEffectsConfig;
@@ -140,6 +160,9 @@ fn main() {
                 }
             }
             win.build()?;
+            if !quiet {
+                lifecycle::setup(app.handle(), std::sync::Arc::new(engine::Engine::new()))?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -205,10 +228,20 @@ fn main() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building Hullport")
-        .run(|app, event| {
-            if let RunEvent::ExitRequested { .. } = event {
+        .run(move |app, event| match event {
+            RunEvent::ExitRequested { code, api, .. } => {
+                // Only lifecycle::quit (which stops the VM first) or a launch mode may end the app.
+                if !quiet && code.is_none() && !lifecycle::quitting(app) {
+                    api.prevent_exit();
+                    return;
+                }
                 let state = app.state::<AppState>();
                 tauri::async_runtime::block_on(cmd::volumes::close_all_helpers(&state));
             }
+            // Clicking the Dock icon while the window is hidden.
+            #[cfg(target_os = "macos")]
+            RunEvent::Reopen { .. } if !quiet => lifecycle::show_main(app),
+            RunEvent::Exit if !quiet => lifecycle::on_exit(app),
+            _ => {}
         });
 }
