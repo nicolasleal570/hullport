@@ -1,5 +1,5 @@
 // `--verify <json> --fixtures <dir> [--external <volume>]`: end-to-end checks against the real engine.
-// Every resource it creates is uniquely named `berth-verify-*` and removed afterwards; nothing else is touched.
+// Every resource it creates is uniquely named `hullport-verify-*` and removed afterwards; nothing else is touched.
 import { api, errMsg } from "./lib/api";
 import { getStatus, queryClient } from "./lib/queries";
 import { go, select } from "./lib/store";
@@ -22,7 +22,7 @@ interface Step { step: string; passed: boolean; detail: string; ms: number }
 export async function verify(mode: LaunchMode) {
   const steps: Step[] = [];
   const tag = Math.random().toString(36).slice(2, 7);
-  const P = `berth-verify-${tag}`;
+  const P = `hullport-verify-${tag}`;
   const cleanup: (() => Promise<unknown>)[] = [];
   const step = async (name: string, fn: () => Promise<string>) => {
     const t = Date.now();
@@ -51,7 +51,7 @@ export async function verify(mode: LaunchMode) {
     const r = await api.createContainer({
       image: "alpine:latest", name: cname,
       command: `sh -c 'i=0; while true; do echo tick $i; i=$((i+1)); sleep 0.4; done'`,
-      env: [{ key: "BERTH_VERIFY", value: "1" }], ports: [], mounts: [], labels: [{ key: "dev.berth.verify", value: tag }],
+      env: [{ key: "HULLPORT_VERIFY", value: "1" }], ports: [], mounts: [], labels: [{ key: "dev.hullport.verify", value: tag }],
       autoRemove: false, start: true, restartPolicy: "no",
     });
     cid = r.id;
@@ -126,7 +126,7 @@ export async function verify(mode: LaunchMode) {
 
   await step("create, browse, export and delete a volume", async () => {
     const vol = `${P}-vol`;
-    await api.createVolume({ name: vol, labels: [{ key: "dev.berth.verify", value: tag }] });
+    await api.createVolume({ name: vol, labels: [{ key: "dev.hullport.verify", value: tag }] });
     cleanup.push(() => api.removeVolume(vol, true));
     go("volumes");
     assert(await until(() => inDom(vol), 8000), "volume did not appear in the list");
@@ -145,7 +145,7 @@ export async function verify(mode: LaunchMode) {
     assert(root.some((e) => e.name === "sub" && e.kind === "dir"), "folder missing");
     assert(sub.some((e) => e.name === "hello.txt"), "file missing");
     assert(file.text?.trim() === "volume-content", `read ${JSON.stringify(file.text)}`);
-    const helpers = (await api.containers()).filter((c) => c.Labels?.["dev.berth.helper"]);
+    const helpers = (await api.containers()).filter((c) => c.Labels?.["dev.hullport.helper"]);
     await api.removeVolume(vol, false);
     assert(await until(() => !inDom(vol), 8000), "volume still listed after delete");
     return `listed /, /sub, read hello.txt = "${file.text?.trim()}", exported ${n} bytes to ${dest.split("/").pop()}, ${helpers.length} helper containers left, volume deleted`;
@@ -162,7 +162,7 @@ export async function verify(mode: LaunchMode) {
     const rec = await until(async () => (await api.buildRecords()).find((r: BuildRecord) => r.id === id && r.status !== "running"), 120000, 500);
     assert(rec?.status === "succeeded", `build ${rec?.status}: ${rec?.error}`);
     const info = await api.inspectImage(`${img}:v1`);
-    const logOk = rec!.logTail.includes(`hi-${tag} from berth`);
+    const logOk = rec!.logTail.includes(`hi-${tag} from hullport`);
     await api.removeImage(`${img}:v1`, true);
     if (rec!.buildRef) await api.buildkitRemove([rec!.buildRef]).catch(() => {});
     await api.deleteBuildRecords([id!]);
@@ -190,7 +190,7 @@ export async function verify(mode: LaunchMode) {
 
   await step("create a network, connect and disconnect a container, delete it", async () => {
     const name = `${P}-net`;
-    const nid = await api.createNetwork({ name, driver: "bridge", internal: false, attachable: false, ipv6: false, labels: [{ key: "dev.berth.verify", value: tag }] });
+    const nid = await api.createNetwork({ name, driver: "bridge", internal: false, attachable: false, ipv6: false, labels: [{ key: "dev.hullport.verify", value: tag }] });
     cleanup.push(() => api.removeNetwork(nid));
     go("networks");
     assert(await until(() => inDom(nid), 8000), "network did not appear in the list");
@@ -230,7 +230,7 @@ export async function verify(mode: LaunchMode) {
       ...(await api.networks()).filter((n) => n.Name.includes(P)).map((n) => n.Name),
     ];
     assert(left.length === 0, `left behind: ${left.join(", ")}`);
-    return "all berth-verify resources removed";
+    return "all hullport-verify resources removed";
   });
 
   await api.writeLaunchText(JSON.stringify({ version: 1, prefix: P, steps }, null, 2));

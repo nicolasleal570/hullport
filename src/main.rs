@@ -1,4 +1,4 @@
-// Berth: a lightweight Docker manager for macOS.
+// Hullport: a lightweight Docker manager for macOS.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod cmd;
@@ -76,7 +76,7 @@ fn main() {
                 // Never steal focus while a check mode runs.
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
-            let data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("berth"));
+            let data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("hullport"));
             let store = store::Store::new(data_dir);
             let prefs = store.prefs();
             let manager = docker::DockerManager::new(prefs.context.clone());
@@ -105,7 +105,7 @@ fn main() {
             });
 
             let mut win = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("Berth")
+                .title("Hullport")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(920.0, 560.0)
                 .focused(!quiet)
@@ -193,7 +193,7 @@ fn main() {
             cmd::builds::buildkit_history_remove,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Berth")
+        .expect("error while building Hullport")
         .run(|app, event| {
             if let RunEvent::ExitRequested { .. } = event {
                 let state = app.state::<AppState>();

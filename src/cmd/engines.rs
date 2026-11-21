@@ -1,4 +1,4 @@
-//! Docker engines Berth can use. Berth is a client: on macOS the containers run in a
+//! Docker engines Hullport can use. Hullport is a client: on macOS the containers run in a
 //! Linux VM provided by an engine (OrbStack, Colima, Docker Desktop...). This module
 //! detects engines and can install / start / stop Colima, the open-source option,
 //! so OrbStack can be replaced.
@@ -53,7 +53,7 @@ pub struct EngineInfo {
     pub installed: bool,
     pub running: bool,
     pub socket: String,
-    /// Docker context Berth switches to for this engine.
+    /// Docker context Hullport switches to for this engine.
     pub context: String,
     pub open_source: bool,
     pub note: String,
@@ -92,7 +92,7 @@ pub fn engines_overview() -> EnginesOverview {
             socket: colima_sock.display().to_string(),
             context: "colima".into(),
             open_source: true,
-            note: "Free and open source. Runs Docker in a lightweight Linux VM (Apple Virtualization). Berth can install, start and stop it.".into(),
+            note: "Free and open source. Runs Docker in a lightweight Linux VM (Apple Virtualization). Hullport can install, start and stop it.".into(),
         },
         EngineInfo {
             id: "orbstack".into(),
@@ -153,7 +153,7 @@ fn ensure_plugin_dir(brew_prefix: &str) -> Result<String, String> {
         return Ok(format!("Docker already looks for plugins in {dir}"));
     }
     if cfg_path.exists() {
-        std::fs::copy(&cfg_path, cfg_path.with_extension("json.berth-backup")).map_err(|e| e.to_string())?;
+        std::fs::copy(&cfg_path, cfg_path.with_extension("json.hullport-backup")).map_err(|e| e.to_string())?;
     } else if let Some(parent) = cfg_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -161,7 +161,7 @@ fn ensure_plugin_dir(brew_prefix: &str) -> Result<String, String> {
     list.insert(0, serde_json::Value::String(dir.clone()));
     cfg["cliPluginsExtraDirs"] = serde_json::Value::Array(list);
     std::fs::write(&cfg_path, serde_json::to_vec_pretty(&cfg).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    Ok(format!("Added {dir} to cliPluginsExtraDirs in {} (backup: config.json.berth-backup)", cfg_path.display()))
+    Ok(format!("Added {dir} to cliPluginsExtraDirs in {} (backup: config.json.hullport-backup)", cfg_path.display()))
 }
 
 async fn stream_cmd(
@@ -243,7 +243,7 @@ pub async fn engine_task(
             }
         }
         .await;
-        // Switch Berth to Colima once it runs.
+        // Switch Hullport to Colima once it runs.
         if result.is_ok() && task_name == "start-colima" {
             let st = app.state::<AppState>();
             let mut prefs = st.store.prefs();

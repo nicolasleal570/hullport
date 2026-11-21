@@ -72,7 +72,7 @@ async function selfTest() {
   if (!connected) {
     steps.push({ step: "act", passed: false, detail: `engine not connected: ${getStatus().error ?? "unknown"}` });
   } else {
-    const name = `berth-selftest-${Math.random().toString(36).slice(2, 8)}`;
+    const name = `hullport-selftest-${Math.random().toString(36).slice(2, 8)}`;
     try {
       go("volumes");
       await api.createVolume({ name });

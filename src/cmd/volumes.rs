@@ -20,7 +20,9 @@ use std::collections::HashMap;
 use std::io::Read;
 use tauri::State;
 
-pub const HELPER_LABEL: &str = "dev.berth.helper";
+pub const HELPER_LABEL: &str = "dev.hullport.helper";
+/// Label used before the rename to Hullport; still cleaned up so old helpers don't linger.
+const LEGACY_HELPER_LABEL: &str = "dev.berth.helper";
 
 #[tauri::command]
 pub async fn list_volumes(state: State<'_, AppState>) -> AppResult<Vec<Volume>> {
@@ -77,11 +79,13 @@ pub async fn remove_volume(state: State<'_, AppState>, name: String, force: bool
 
 /// Remove helper containers left behind by a previous run (only ones carrying our label).
 pub async fn cleanup_stale_helpers(d: &Docker) {
-    let f = crate::cmd::filters(&[("label", HELPER_LABEL)]);
-    if let Ok(list) = d.list_containers(Some(ListContainersOptionsBuilder::default().all(true).filters(&f).build())).await {
-        for c in list {
-            if let Some(id) = c.id {
-                let _ = d.remove_container(&id, Some(RemoveContainerOptionsBuilder::default().force(true).build())).await;
+    for label in [HELPER_LABEL, LEGACY_HELPER_LABEL] {
+        let f = crate::cmd::filters(&[("label", label)]);
+        if let Ok(list) = d.list_containers(Some(ListContainersOptionsBuilder::default().all(true).filters(&f).build())).await {
+            for c in list {
+                if let Some(id) = c.id {
+                    let _ = d.remove_container(&id, Some(RemoveContainerOptionsBuilder::default().force(true).build())).await;
+                }
             }
         }
     }
@@ -112,7 +116,7 @@ async fn ensure_helper(state: &AppState, d: &Docker, volume: &str) -> AppResult<
     let image = helper_image(d).await?;
     let mut labels = HashMap::new();
     labels.insert(HELPER_LABEL.to_string(), "volume-browser".to_string());
-    labels.insert("dev.berth.volume".to_string(), volume.to_string());
+    labels.insert("dev.hullport.volume".to_string(), volume.to_string());
     let body = ContainerCreateBody {
         image: Some(image),
         cmd: Some(vec!["sleep".into(), "3600".into()]),
@@ -131,7 +135,7 @@ async fn ensure_helper(state: &AppState, d: &Docker, volume: &str) -> AppResult<
         }),
         ..Default::default()
     };
-    let name = format!("berth-volume-browser-{}", &uuid::Uuid::new_v4().simple().to_string()[..8]);
+    let name = format!("hullport-volume-browser-{}", &uuid::Uuid::new_v4().simple().to_string()[..8]);
     let created = d
         .create_container(Some(CreateContainerOptionsBuilder::default().name(&name).build()), body)
         .await?;

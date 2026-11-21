@@ -77,8 +77,8 @@ export function CreateContainerDialog({ onClose, image: initialImage, defaults }
       <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Image">
-            <input autoFocus className="field mono" list="berth-images" placeholder="nginx:alpine" value={image} onChange={(e) => setImage(e.target.value)} />
-            <datalist id="berth-images">{tags.map((t) => <option key={t} value={t} />)}</datalist>
+            <input autoFocus className="field mono" list="hullport-images" placeholder="nginx:alpine" value={image} onChange={(e) => setImage(e.target.value)} />
+            <datalist id="hullport-images">{tags.map((t) => <option key={t} value={t} />)}</datalist>
           </Field>
           <Field label="Name" hint="Optional; Docker picks one otherwise.">
             <input className="field" placeholder="my-container" value={name} onChange={(e) => setName(e.target.value)} />
@@ -115,14 +115,14 @@ export function CreateContainerDialog({ onClose, image: initialImage, defaults }
           <div className="flex flex-col gap-1.5">
             {mounts.map((m, i) => (
               <div key={i} className="flex items-center gap-1.5">
-                <input className="field mono flex-1" list="berth-volumes" placeholder="volume or /Users/…" value={m.source} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, source: e.target.value } : x)))} />
+                <input className="field mono flex-1" list="hullport-volumes" placeholder="volume or /Users/…" value={m.source} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, source: e.target.value } : x)))} />
                 <span className="text-fg3">→</span>
                 <input className="field mono flex-1" placeholder="/data" value={m.target} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, target: e.target.value } : x)))} />
                 <label className="text-[12px] text-fg2 flex items-center gap-1"><input type="checkbox" checked={m.readOnly} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, readOnly: e.target.checked } : x)))} />RO</label>
                 <IconButton title="Remove" onClick={() => setMounts(mounts.filter((_, j) => j !== i))}><IconX size={12} /></IconButton>
               </div>
             ))}
-            <datalist id="berth-volumes">{volumes.map((v) => <option key={v.Name} value={v.Name} />)}</datalist>
+            <datalist id="hullport-volumes">{volumes.map((v) => <option key={v.Name} value={v.Name} />)}</datalist>
             <button type="button" className="self-start inline-flex items-center gap-1 text-accent text-[12px] hover:underline" onClick={() => setMounts([...mounts, { source: "", target: "", readOnly: false }])}>
               <IconPlus size={12} /> Add mount
             </button>

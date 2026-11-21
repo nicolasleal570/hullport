@@ -73,7 +73,7 @@ pub async fn build_start(app: tauri::AppHandle, state: State<'_, AppState>, conf
 
     let (dctx, host) = state.docker.endpoint();
     let mut cmd = crate::docker::cli::command(&dctx, &host).map_err(other)?;
-    let meta_file = std::env::temp_dir().join(format!("berth-build-{}.json", uuid::Uuid::new_v4().simple()));
+    let meta_file = std::env::temp_dir().join(format!("hullport-build-{}.json", uuid::Uuid::new_v4().simple()));
     let mut args: Vec<String> = vec![
         "buildx".into(), "build".into(), "--progress=rawjson".into(),
         "--metadata-file".into(), meta_file.display().to_string(),

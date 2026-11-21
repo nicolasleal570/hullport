@@ -7,7 +7,7 @@ import { confirmAction } from "../../components/dialog";
 import { Badge, Button, Dot, ErrorBox, Field, Loading } from "../../components/ui";
 import { IconWarn } from "../../components/icons";
 
-/** Engines: Berth is the app; an engine (a Linux VM running Docker) runs the containers. */
+/** Engines: Hullport is the app; an engine (a Linux VM running Docker) runs the containers. */
 export function EnginesView() {
   const q = useQuery({ queryKey: ["engines"], queryFn: api.engines, refetchInterval: 4000, staleTime: 0 });
   const st = useStatus();
@@ -65,8 +65,8 @@ export function EnginesView() {
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-5 max-w-[880px]">
         <p className="text-[12.5px] text-fg2 leading-relaxed mb-4">
-          Berth is the app you work in. The <b className="text-fg">engine</b> is what actually runs containers: on a Mac that's a small Linux virtual
-          machine with Docker inside. To stop using OrbStack, install and start <b className="text-fg">Colima</b> (free, open source) here; Berth
+          Hullport is the app you work in. The <b className="text-fg">engine</b> is what actually runs containers: on a Mac that's a small Linux virtual
+          machine with Docker inside. To stop using OrbStack, install and start <b className="text-fg">Colima</b> (free, open source) here; Hullport
           switches to it automatically. Containers, images and volumes stored in OrbStack stay there and are not moved.
         </p>
         {q.isLoading && <Loading />}
@@ -89,7 +89,7 @@ export function EnginesView() {
             <div className="font-semibold mb-1">Colima</div>
             {!colima.installed ? (
               <div className="flex items-center gap-3">
-                <span className="text-[12.5px] text-fg2 flex-1">{d?.brew ? "Not installed. Berth can install it with Homebrew." : "Install Homebrew from brew.sh first, then come back here."}</span>
+                <span className="text-[12.5px] text-fg2 flex-1">{d?.brew ? "Not installed. Hullport can install it with Homebrew." : "Install Homebrew from brew.sh first, then come back here."}</span>
                 <Button kind="primary" disabled={!d?.brew || !!busy} busy={busy === "install-colima"} onClick={install}>Install Colima</Button>
               </div>
             ) : (
@@ -100,7 +100,7 @@ export function EnginesView() {
                 <div className="flex-1" />
                 {colima.running ? (
                   <>
-                    <Button onClick={() => api.setContext("colima")}>Use in Berth</Button>
+                    <Button onClick={() => api.setContext("colima")}>Use in Hullport</Button>
                     <Button disabled={!!busy} busy={busy === "stop-colima"} onClick={() => run("stop-colima", "Stop Colima")}>Stop</Button>
                   </>
                 ) : (
@@ -137,7 +137,7 @@ function EngineRow({ e, active }: { e: EngineInfo; active: boolean }) {
         <div className="font-medium flex items-center gap-2">
           {e.name}
           {e.openSource && <Badge tone="accent">open source</Badge>}
-          {active && <Badge tone="ok">used by Berth</Badge>}
+          {active && <Badge tone="ok">used by Hullport</Badge>}
         </div>
         <div className="text-[11.5px] text-fg2">{e.note}</div>
       </div>

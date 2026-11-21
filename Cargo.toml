@@ -1,12 +1,12 @@
 [package]
-name = "berth"
+name = "hullport"
 version = "0.1.0"
-description = "Berth - a lightweight Docker manager for macOS"
+description = "Hullport - a lightweight Docker manager for macOS"
 edition = "2021"
-default-run = "berth"
+default-run = "hullport"
 
 [[bin]]
-name = "berth"
+name = "hullport"
 path = "src/main.rs"
 
 [build-dependencies]

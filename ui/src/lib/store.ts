@@ -24,7 +24,7 @@ interface UiState {
 }
 
 const saved = (() => {
-  try { return JSON.parse(localStorage.getItem("berth.ui") ?? "{}"); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem("hullport.ui") ?? "{}"); } catch { return {}; }
 })();
 
 let state: UiState = {
@@ -51,7 +51,7 @@ export function setUi(patch: Partial<UiState> | ((s: UiState) => Partial<UiState
   const p = typeof patch === "function" ? patch(state) : patch;
   state = { ...state, ...p };
   const { section, showStopped, imageFilter, collapsedGroups, listWidth, sort, logsFontSize, logsWrapLines, logsSearchMode, buildsFilter, stepFilter, showInternalSteps } = state;
-  localStorage.setItem("berth.ui", JSON.stringify({ section, showStopped, imageFilter, collapsedGroups, listWidth, sort, logsFontSize, logsWrapLines, logsSearchMode, buildsFilter, stepFilter, showInternalSteps }));
+  localStorage.setItem("hullport.ui", JSON.stringify({ section, showStopped, imageFilter, collapsedGroups, listWidth, sort, logsFontSize, logsWrapLines, logsSearchMode, buildsFilter, stepFilter, showInternalSteps }));
   listeners.forEach((l) => l());
 }
 

@@ -74,7 +74,7 @@ function EngineDown({ section }: { section: string }) {
           action={<div className="flex gap-2 justify-center"><Button kind="primary" onClick={() => api.reconnect()}>Try Again</Button><Button onClick={() => go("engines")}>Set Up an Engine…</Button></div>}
         >
           <div className="selectable">{st.error ?? "Could not reach the engine."}</div>
-          <div className="mt-2 text-fg3">Context <b>{st.context}</b> · <span className="mono">{st.host}</span>. Start OrbStack, Docker Desktop or Colima, or pick another context in the sidebar. Berth reconnects automatically.</div>
+          <div className="mt-2 text-fg3">Context <b>{st.context}</b> · <span className="mono">{st.host}</span>. Start OrbStack, Docker Desktop or Colima, or pick another context in the sidebar. Hullport reconnects automatically.</div>
         </Empty>
       )}
     </div>
