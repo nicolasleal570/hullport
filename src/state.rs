@@ -17,7 +17,7 @@ pub struct ExecSession {
 #[derive(Clone, Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LaunchMode {
-    /// "normal" | "screenshot" | "selftest" | "verify"
+    /// "normal" | "screenshot" | "selftest" | "verify" | "migrate"
     pub mode: String,
     pub path: Option<String>,
     /// `--verify` only: folder with test Dockerfiles, and a volume name the CLI will create externally.

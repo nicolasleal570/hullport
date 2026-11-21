@@ -38,6 +38,11 @@ fn parse_launch() -> LaunchMode {
                 mode.path = value.map(absolute);
                 i += 1;
             }
+            "--migrate" => {
+                mode.mode = "migrate".into();
+                mode.path = value.map(absolute);
+                i += 1;
+            }
             "--fixtures" => {
                 mode.fixtures = value.map(absolute);
                 i += 1;

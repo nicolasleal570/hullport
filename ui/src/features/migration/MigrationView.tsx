@@ -4,6 +4,7 @@ import {
   api, errMsg, type MigrationContainer, type MigrationImage, type MigrationItem, type MigrationPlan, type MigrationVolume,
 } from "../../lib/api";
 import { bytes } from "../../lib/format";
+import { defaultSelection } from "./defaults";
 import { go } from "../../lib/store";
 import { toast } from "../../lib/toast";
 import { confirmAction } from "../../components/dialog";
@@ -34,15 +35,13 @@ export function MigrationView() {
 }
 
 function Plan({ plan, refresh }: { plan: MigrationPlan; refresh: () => void }) {
-  const defaultImages = () => new Set(plan.images.filter((i) => !i.skip).map((i) => i.id));
-  const defaultVolumes = () => new Set(plan.volumes.filter((v) => !v.skip && v.inUseBy.length === 0).map((v) => v.name));
   // A loose container with changes in its writable layer is the user's call: off by default.
   const loose = plan.containers.filter((c) => !c.composeProject);
-  const defaultContainers = () => new Set(loose.filter((c) => !c.inTarget && !c.changes).map((c) => c.name));
-  const [images, setImages] = useState(defaultImages);
-  const [volumes, setVolumes] = useState(defaultVolumes);
+  const [initial] = useState(() => defaultSelection(plan));
+  const [images, setImages] = useState(() => new Set(initial.images));
+  const [volumes, setVolumes] = useState(() => new Set(initial.volumes));
   const [replace, setReplace] = useState(() => new Set<string>());
-  const [containers, setContainers] = useState(defaultContainers);
+  const [containers, setContainers] = useState(() => new Set(initial.containers));
   const [progress, setProgress] = useState<Record<string, MigrationItem>>({});
   const [results, setResults] = useState<MigrationItem[] | null>(null);
   const [running, setRunning] = useState(false);

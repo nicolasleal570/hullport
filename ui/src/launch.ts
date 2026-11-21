@@ -1,6 +1,6 @@
 // `--screenshot <png>` and `--self-test <json>` modes used to check the build automatically.
 import { toPng } from "html-to-image";
-import { api, errMsg } from "./lib/api";
+import { api, errMsg, type MigrationItem } from "./lib/api";
 import { getStatus, queryClient } from "./lib/queries";
 import { go, select, type Section } from "./lib/store";
 import type { ContainerSummary } from "./lib/types";
@@ -17,6 +17,22 @@ async function waitFor<T>(fn: () => T | null | undefined | false, timeout = 8000
 }
 const frames = (n: number) => new Promise<void>((r) => { let i = 0; const f = () => (++i >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
 
+/** `--migrate <json>`: copy OrbStack's data into Hullport with the defaults the Migrate view starts with. */
+async function migrate() {
+  const { defaultSelection } = await import("./features/migration/defaults");
+  const plan = await api.migrationPlan();
+  if (!plan.source.available || !plan.target.available) {
+    await api.writeLaunchText(JSON.stringify({ plan, error: "OrbStack and Hullport's engine must both be running" }, null, 2));
+    return;
+  }
+  const selection = defaultSelection(plan);
+  const started = Date.now();
+  const done = await new Promise<{ results: MigrationItem[]; canceled: boolean }>((resolve, reject) => {
+    api.migrationRun(selection, (e) => { if (e.type === "done") resolve(e); }).catch(reject);
+  });
+  await api.writeLaunchText(JSON.stringify({ selection, ...done, seconds: Math.round((Date.now() - started) / 1000), plan }, null, 2));
+}
+
 export async function runLaunchMode() {
   let mode;
   try { mode = await api.launchMode(); } catch { return; }
@@ -25,6 +41,7 @@ export async function runLaunchMode() {
   try {
     if (mode.mode === "screenshot") await screenshot((mode.section as Section) || "containers");
     else if (mode.mode === "verify") await (await import("./verify")).verify(mode);
+    else if (mode.mode === "migrate") await migrate();
     else await selfTest();
   } finally {
     await api.exit(0);
