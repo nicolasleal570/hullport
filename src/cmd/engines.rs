@@ -76,7 +76,7 @@ pub fn engines_overview(app: AppHandle) -> EnginesOverview {
             managed: managed.is_some(),
         },
         others: vec![
-            other("orbstack", "OrbStack", "/Applications/OrbStack.app", h.join(".orbstack/run/docker.sock"), "orbstack", "Started and stopped from OrbStack itself. Its data is migrated from here later."),
+            other("orbstack", "OrbStack", "/Applications/OrbStack.app", h.join(".orbstack/run/docker.sock"), "orbstack", "Started and stopped from OrbStack itself. Migrate copies its images and volumes into Hullport."),
             other("desktop", "Docker Desktop", "/Applications/Docker.app", h.join(".docker/run/docker.sock"), "desktop-linux", "Started and stopped from Docker Desktop itself."),
             other("colima", "Colima", "/opt/homebrew/bin/colima", h.join(".colima/default/docker.sock"), "colima", "Started and stopped with the colima command."),
         ],
