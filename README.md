@@ -29,6 +29,7 @@ exactly what runs on the machine, and to learn how a Docker engine on macOS work
 - [Development](#development)
 - [Status and limitations](#status-and-limitations)
 - [Credits](#credits)
+- [License](#license)
 
 ## Features
 
@@ -218,3 +219,8 @@ Hullport stands on open-source work: [Lima](https://github.com/lima-vm/lima),
 [Tauri](https://tauri.app), [bollard](https://github.com/fussybeaver/bollard), [React](https://react.dev),
 [TanStack Query](https://tanstack.com/query), [xterm.js](https://xtermjs.org) and
 [Tailwind CSS](https://tailwindcss.com).
+
+## License
+
+Hullport is licensed under the [Apache License 2.0](LICENSE). The patches in `engine/patches` modify Lima and
+gvisor-tap-vsock, which are also Apache-2.0.
