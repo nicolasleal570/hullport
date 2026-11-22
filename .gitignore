@@ -14,3 +14,6 @@ node_modules/
 .codegraph/
 .DS_Store
 *.log
+
+# Output of the check modes (--screenshot, --self-test, --verify): shows local data
+/shots/
