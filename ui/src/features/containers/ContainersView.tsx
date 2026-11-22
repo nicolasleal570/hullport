@@ -55,9 +55,10 @@ export function ContainersView() {
         const health = /\((healthy|unhealthy|health: starting)\)/.exec(c.Status ?? "")?.[1];
         const text = (c.State === "paused" ? "Paused" : c.Status ?? "").replace(/\s*\((healthy|unhealthy|health: starting)\)/, "");
         return (
-          <span className="text-fg2 text-caption inline-flex items-center gap-1.5" title={c.Status}>
-            {text}
-            {health && <span className={health === "healthy" ? "text-ok" : health === "unhealthy" ? "text-bad" : "text-warn"} title={health}>●</span>}
+          // The text truncates, the health dot never does.
+          <span className="text-fg2 text-caption flex items-center gap-1.5 min-w-0" title={c.Status}>
+            <span className="truncate">{text}</span>
+            {health && <Dot tone={health === "healthy" ? "ok" : health === "unhealthy" ? "bad" : "warn"} />}
           </span>
         );
       },

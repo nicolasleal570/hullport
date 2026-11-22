@@ -46,7 +46,7 @@ export function Table<T>(p: Props<T>) {
     if (p.onSortChange) p.onSortChange(next); else setOwnSort(next);
   };
   const ref = useRef<HTMLDivElement>(null);
-  const grid = { gridTemplateColumns: p.columns.map((c) => c.width).join(" ") + (p.rowActions ? " auto" : "") };
+  const grid = { gridTemplateColumns: p.columns.map((c) => c.width).join(" ") };
 
   const sorted = useMemo(() => {
     const fn = p.columns.find((c) => c.id === sort.id)?.sort ?? p.extraSorts?.[sort.id];
@@ -107,19 +107,21 @@ export function Table<T>(p: Props<T>) {
         onContextMenu={(e) => { p.onSelect(key); p.onContextMenu?.(e, r); }}
         // Inset rounded rows; the selected one takes the selected fill and re-points its contents (`.on-sel`).
         className={cx(
-          "group grid items-center gap-x-3 mx-1 px-3 min-h-[34px] rounded-control",
+          "group flex items-center mx-1 px-3 min-h-[34px] rounded-control",
           sel ? "bg-sel on-sel" : "hover:bg-hover",
           p.dim?.(r) && !sel && "opacity-60",
         )}
-        style={grid}
       >
-        {p.columns.map((c, i) => (
-          <div key={c.id} role="cell" className={cx("min-w-0 truncate", c.align === "right" && "text-right", i === 0 && indent && "pl-5")}>
-            {c.cell(r)}
-          </div>
-        ))}
+        {/* The actions sit outside the grid: when the list is too narrow the last columns are clipped, never the actions. */}
+        <div className="flex-1 min-w-0 grid items-center gap-x-3 overflow-x-clip" style={grid}>
+          {p.columns.map((c, i) => (
+            <div key={c.id} role="cell" className={cx("min-w-0 truncate", c.align === "right" && "text-right", i === 0 && indent && "pl-5")}>
+              {c.cell(r)}
+            </div>
+          ))}
+        </div>
         {p.rowActions && (
-          <div className={cx("flex items-center gap-0.5 justify-end", sel ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+          <div className={cx("flex shrink-0 items-center gap-0.5 justify-end pl-2 empty:hidden", sel ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
             {p.rowActions(r)}
           </div>
         )}
@@ -153,7 +155,6 @@ export function Table<T>(p: Props<T>) {
             {sort.id === c.id && c.sort && (sort.desc ? <IconChevronDown size={10} /> : <IconChevronDown size={10} className="rotate-180" />)}
           </button>
         ))}
-        {p.rowActions && <div />}
       </div>
       {layout.groups.map((g) => {
         const collapsed = !!p.collapsed?.[g.key];
