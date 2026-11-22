@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, MenuItemKind, PredefinedMenuItem};
+use tauri::image::Image;
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager, Wry};
 
@@ -29,7 +30,9 @@ pub fn setup(app: &AppHandle, engine: Arc<Engine>) -> tauri::Result<()> {
     let separator = || PredefinedMenuItem::separator(app);
     let menu = Menu::with_items(app, &[&status, &separator()?, &open, &toggle, &login, &separator()?, &quit_item])?;
     TrayIconBuilder::with_id("main")
-        .icon(app.default_window_icon().cloned().expect("the bundle has an icon"))
+        // A template image: macOS tints it for the light and dark menu bar.
+        .icon(Image::from_bytes(include_bytes!("../icons/tray.png"))?)
+        .icon_as_template(true)
         .tooltip("Hullport")
         .menu(&menu)
         .show_menu_on_left_click(true)
