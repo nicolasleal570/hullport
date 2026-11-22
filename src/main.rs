@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod cmd;
+mod cutover;
 mod docker;
 mod engine;
 mod error;
@@ -40,6 +41,11 @@ fn parse_launch() -> LaunchMode {
             }
             "--migrate" => {
                 mode.mode = "migrate".into();
+                mode.path = value.map(absolute);
+                i += 1;
+            }
+            "--cutover" | "--cutover-revert" => {
+                mode.mode = flag.trim_start_matches("--").into();
                 mode.path = value.map(absolute);
                 i += 1;
             }
@@ -186,6 +192,9 @@ fn main() {
             cmd::engines::engine_status,
             cmd::engines::engine_start,
             cmd::engines::engine_stop,
+            cmd::engines::cutover_status,
+            cmd::engines::cutover_apply,
+            cmd::engines::cutover_revert,
             cmd::migration::migration_plan,
             cmd::migration::migration_run,
             cmd::containers::list_containers,

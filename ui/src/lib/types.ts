@@ -97,4 +97,4 @@ export interface BuildkitHistoryItem {
 }
 
 export interface EngineEvent { kind: string; action: string; id: string; name?: string | null; time?: number | null }
-export interface LaunchMode { mode: "normal" | "screenshot" | "selftest" | "verify" | "migrate"; path?: string | null; fixtures?: string | null; external?: string | null; section?: string | null }
+export interface LaunchMode { mode: "normal" | "screenshot" | "selftest" | "verify" | "migrate" | "cutover" | "cutover-revert"; path?: string | null; fixtures?: string | null; external?: string | null; section?: string | null }

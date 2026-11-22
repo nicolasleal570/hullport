@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api, errMsg, type EngineInfo, type EngineState, type HullportEngine } from "../../lib/api";
 import { useEngineProgress, useStatus } from "../../lib/queries";
 import type { ConnStatus } from "../../lib/types";
 import { go } from "../../lib/store";
 import { toast } from "../../lib/toast";
-import { Badge, Button, Dot, ErrorBox, Loading } from "../../components/ui";
+import { Badge, Button, Dot, ErrorBox, Loading, cx } from "../../components/ui";
+import { confirmAction } from "../../components/dialog";
 
 const stateLabel: Record<EngineState, string> = {
   notInstalled: "Not installed", stopped: "Stopped", starting: "Starting…", running: "Running", stopping: "Stopping…", failed: "Failed",
@@ -38,6 +39,7 @@ export function EnginesView() {
         {q.isLoading && <Loading />}
         {q.error != null && <ErrorBox error={q.error} />}
         {d && <HullportCard e={d.hullport} active={st.context === d.hullport.context || usesSocket(st, d.hullport.socket)} />}
+        {d && <TerminalCard />}
         {d && (
           <>
             <div className="text-[12px] font-semibold text-fg2 mb-2">Other engines</div>
@@ -114,6 +116,70 @@ function EngineRow({ e, active }: { e: EngineInfo; active: boolean }) {
       <div className="text-[12px] text-fg2 w-[110px] text-right">{!e.installed ? "Not installed" : e.running ? "Running" : "Stopped"}</div>
       {e.id === "orbstack" && e.installed && <Button onClick={() => go("migrate")}>Migrate to Hullport…</Button>}
       {e.running && !active && <Button onClick={() => api.setContext(e.context)}>Use</Button>}
+    </div>
+  );
+}
+
+/** Which engine the terminal's `docker` uses, and the switch to Hullport (the cutover). */
+function TerminalCard() {
+  const q = useQuery({ queryKey: ["cutover"], queryFn: api.cutoverStatus, staleTime: 0 });
+  const [busy, setBusy] = useState(false);
+  const s = q.data;
+  if (!s) return null;
+  const change = async (apply: boolean) => {
+    const { ok } = await confirmAction({
+      title: apply ? "Use Hullport in the terminal?" : "Put the terminal back as it was?",
+      message: apply ? (
+        <>
+          The <span className="mono">hullport</span> context becomes the current one (<span className="mono">orbstack</span> is kept), and{" "}
+          <span className="mono">docker</span>, its compose and buildx plugins, the keychain credential helper and{" "}
+          <span className="mono">/var/run/docker.sock</span> point at Hullport's. What's there now is saved first, so this can be undone. macOS
+          asks for your administrator password once.
+        </>
+      ) : (
+        <>Every path goes back to what it held before, and the previous context becomes the current one again. macOS asks for your password once.</>
+      ),
+      confirmLabel: apply ? "Switch" : "Undo",
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await (apply ? api.cutoverApply() : api.cutoverRevert());
+      toast(apply ? "The terminal now uses Hullport" : "The terminal is back as it was", "ok");
+    } catch (e) {
+      toast(errMsg(e), "error");
+    } finally {
+      setBusy(false);
+      q.refetch();
+    }
+  };
+  return (
+    <div className="rounded-[10px] border border-line bg-panel p-4 mb-5" data-testid="terminal-card">
+      <div className="flex items-center gap-3">
+        <Dot tone={s.complete ? "ok" : s.applied ? "warn" : "idle"} />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold">Terminal</div>
+          <div className="text-[11.5px] text-fg2">
+            {s.complete ? "docker, docker compose and docker buildx use Hullport" : s.applied ? "Switched, but something was changed since" : `docker uses the ${s.currentContext} context`}
+          </div>
+        </div>
+        {s.applied ? (
+          <Button busy={busy} onClick={() => change(false)}>Undo</Button>
+        ) : (
+          <Button kind="primary" busy={busy} onClick={() => change(true)}>Use Hullport in the Terminal…</Button>
+        )}
+      </div>
+      <div className="mt-3 text-[11.5px] leading-[1.7]">
+        <div className="flex gap-2"><span className="mono text-fg2 w-[330px] truncate">current context</span><span className={s.currentContext === "hullport" ? "text-ok" : "text-fg3"}>{s.currentContext}</span></div>
+        {s.paths.map((p) => (
+          <div key={p.path} className="flex gap-2">
+            <span className="mono text-fg2 w-[330px] truncate" title={p.path}>{p.path.replace(/^\/Users\/[^/]+/, "~")}</span>
+            <span className={cx("mono truncate", p.isHullport ? "text-ok" : "text-fg3")} title={p.pointsTo ?? ""}>
+              {p.pointsTo ? `→ ${p.pointsTo.replace(/^\/Users\/[^/]+/, "~")}` : p.exists ? "a regular file" : "not there"}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -39,6 +39,16 @@ fn default_host() -> String {
     env_nonempty("DOCKER_HOST").unwrap_or_else(|| "unix:///var/run/docker.sock".into())
 }
 
+/// `currentContext` saved in a Docker config folder, regardless of this process's environment.
+pub fn cli_current_context_in(dir: &Path) -> String {
+    std::fs::read_to_string(dir.join("config.json"))
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("currentContext").and_then(|c| c.as_str()).map(String::from))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".into())
+}
+
 /// The context name the Docker CLI would pick.
 pub fn cli_current_context() -> String {
     if let Some(c) = env_nonempty("DOCKER_CONTEXT") {

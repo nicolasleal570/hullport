@@ -42,6 +42,12 @@ export async function runLaunchMode() {
     if (mode.mode === "screenshot") await screenshot((mode.section as Section) || "containers");
     else if (mode.mode === "verify") await (await import("./verify")).verify(mode);
     else if (mode.mode === "migrate") await migrate();
+    else if (mode.mode === "cutover" || mode.mode === "cutover-revert") {
+      // `--cutover <json>` / `--cutover-revert <json>`: switch the terminal's Docker, write the outcome.
+      const run = mode.mode === "cutover" ? api.cutoverApply : api.cutoverRevert;
+      const out = await run().then((status) => ({ ok: true, status }), (e) => ({ ok: false, error: errMsg(e) }));
+      await api.writeLaunchText(JSON.stringify(out, null, 2));
+    }
     else await selfTest();
   } finally {
     await api.exit(0);

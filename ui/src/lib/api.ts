@@ -28,6 +28,9 @@ export const api = {
   engineStatus: () => call<EngineProgress>("engine_status"),
   engineStart: () => call<void>("engine_start"),
   engineStop: () => call<void>("engine_stop"),
+  cutoverStatus: () => call<CutoverStatus>("cutover_status"),
+  cutoverApply: () => call<CutoverStatus>("cutover_apply"),
+  cutoverRevert: () => call<CutoverStatus>("cutover_revert"),
   migrationPlan: () => call<MigrationPlan>("migration_plan"),
   migrationRun: (selection: MigrationSelection, on: (e: MigrationEvent) => void) => stream("migration_run", { selection }, on),
 
@@ -123,6 +126,8 @@ export interface HullportEngine {
   cpus?: string | null; memory?: string | null; disk?: string | null; managed: boolean;
 }
 export interface EngineInfo { id: string; name: string; installed: boolean; running: boolean; socket: string; context: string; note: string }
+export interface CutoverPath { path: string; pointsTo?: string | null; exists: boolean; isHullport: boolean; admin: boolean }
+export interface CutoverStatus { applied: boolean; appliedAt?: string | null; currentContext: string; paths: CutoverPath[]; complete: boolean }
 export interface MigrationSide { available: boolean; host: string; version?: string | null; error?: string | null }
 export interface MigrationImage { id: string; tags: string[]; size: number; platform: string; skip?: string | null }
 export interface MigrationVolume { name: string; size?: number | null; inUseBy: string[]; targetSize?: number | null; skip?: string | null }

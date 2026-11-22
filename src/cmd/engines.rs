@@ -107,3 +107,21 @@ pub fn engine_status(app: AppHandle) -> crate::engine::EngineProgress {
         }
     }
 }
+
+/// Where the terminal's Docker points: Hullport, or what was there before the cutover.
+#[tauri::command]
+pub async fn cutover_status() -> crate::cutover::CutoverStatus {
+    tauri::async_runtime::spawn_blocking(crate::cutover::status).await.expect("status task")
+}
+
+/// Point the terminal's Docker at Hullport (asks for an administrator password once).
+#[tauri::command]
+pub async fn cutover_apply() -> Result<crate::cutover::CutoverStatus, String> {
+    tauri::async_runtime::spawn_blocking(crate::cutover::apply).await.map_err(|e| e.to_string())?
+}
+
+/// Put the terminal's Docker back as it was before the cutover.
+#[tauri::command]
+pub async fn cutover_revert() -> Result<crate::cutover::CutoverStatus, String> {
+    tauri::async_runtime::spawn_blocking(crate::cutover::revert).await.map_err(|e| e.to_string())?
+}
