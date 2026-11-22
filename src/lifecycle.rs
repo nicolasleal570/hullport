@@ -203,12 +203,16 @@ pub fn quit(app: &AppHandle) {
     }
     let _ = lc.status.set_text("Stopping the engine…");
     let _ = lc.toggle.set_enabled(false);
-    if let Some(w) = app.get_webview_window("main") {
-        let _ = w.hide();
-    }
     let engine = lc.engine.clone();
     let handle = app.clone();
     std::thread::spawn(move || {
+        // Stopping the VM takes a few seconds: show the window saying so, or Quit looks like it did nothing.
+        if matches!(engine.refresh(), EngineState::Running | EngineState::Starting) {
+            show_main(&handle);
+            let _ = handle.emit("quitting", ());
+        } else if let Some(w) = handle.get_webview_window("main") {
+            let _ = w.hide();
+        }
         if let Err(e) = engine.stop() {
             log::warn!("engine stop failed while quitting: {e}");
         }

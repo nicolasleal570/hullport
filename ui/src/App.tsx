@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { Sidebar, SECTIONS } from "./components/Sidebar";
 import { MenuHost } from "./components/menu";
 import { ConfirmHost } from "./components/dialog";
@@ -35,6 +36,9 @@ export default function App() {
 
   useEffect(() => { runLaunchMode(); }, []);
 
+  const quitting = useQuitting();
+  if (quitting != null) return <Quitting since={quitting} />;
+
   const needsEngine = section !== "builds" && section !== "engines" && section !== "migrate" && st.state !== "connected";
   return (
     <div className="h-full flex">
@@ -55,6 +59,36 @@ export default function App() {
       <MenuHost />
       <ConfirmHost />
       <Toasts />
+    </div>
+  );
+}
+
+/** When Quit has to stop the engine, the backend shows the window and says so: the time it is set. */
+function useQuitting() {
+  const [since, setSince] = useState<number | null>(null);
+  useEffect(() => {
+    const off = listen("quitting", () => setSince(Date.now()));
+    return () => { off.then((u) => u()); };
+  }, []);
+  return since;
+}
+
+/** Quit stops the VM before exiting; this takes a few seconds, so the window explains the wait. */
+function Quitting({ since }: { since: number }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="h-full flex flex-col bg-bg">
+      <div data-tauri-drag-region className="h-[52px] shrink-0" />
+      <div className="flex-1 min-h-0">
+        <Empty icon={<IconSpinner size={30} />} title="Quitting Hullport…">
+          <div data-testid="quitting">Stopping the engine and its containers, so no virtual machine keeps running after Hullport closes.</div>
+          <div className="mt-3 text-fg3 tabular-nums">{Math.max(0, Math.round((now - since) / 1000))} s · Hullport closes on its own when it's done</div>
+        </Empty>
+      </div>
     </div>
   );
 }
