@@ -16,12 +16,12 @@ export function MigrationView() {
   const plan = q.data;
   return (
     <div className="h-full flex flex-col" data-section="migrate">
-      <div data-tauri-drag-region className="h-[52px] shrink-0 flex items-center gap-3 pl-4 pr-3 border-b border-line">
-        <h1 data-tauri-drag-region className="text-[15px] font-semibold flex-1">Migrate from OrbStack</h1>
+      <div data-tauri-drag-region className="h-[52px] shrink-0 flex items-center gap-3 pl-4 pr-3 bg-tile border-b border-line">
+        <h1 data-tauri-drag-region className="text-headline font-semibold flex-1">Migrate from OrbStack</h1>
         <Button kind="ghost" onClick={() => go("engines")}>Back to Engines</Button>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-5 max-w-[920px]">
-        <p className="text-[12.5px] text-fg2 leading-relaxed mb-4">
+        <p className="text-body text-fg2 leading-relaxed mb-4">
           Copies what lives in OrbStack into Hullport's engine. OrbStack is only read: volumes are copied through helper containers named{" "}
           <span className="mono">hullport-migrate-*</span> that mount them read-only, never run, and are removed right after. Nothing already in
           Hullport is overwritten unless you ask for it below.
@@ -72,7 +72,7 @@ function Plan({ plan, refresh }: { plan: MigrationPlan; refresh: () => void }) {
 
   if (!plan.source.available || !plan.target.available) {
     return (
-      <div className="rounded-[10px] border border-line bg-panel p-4">
+      <div className="card p-4">
         {!plan.source.available && <SideDown label="OrbStack isn't running" hint="Start OrbStack: the migration reads from it while it runs." error={plan.source.error} />}
         {!plan.target.available && <SideDown label="Hullport's engine isn't running" hint="Start it from the menu bar icon or the Engines page." error={plan.target.error} />}
         <Button kind="primary" onClick={refresh}>Check Again</Button>
@@ -121,7 +121,7 @@ function Plan({ plan, refresh }: { plan: MigrationPlan; refresh: () => void }) {
 
   return (
     <>
-      <div className={cx("rounded-[10px] border p-3 mb-4 text-[12.5px] flex items-center gap-3", tight ? "border-warn/35 bg-warn/8" : "border-line bg-panel")}>
+      <div className={cx("p-3 mb-4 text-body flex items-center gap-3", tight ? "rounded-card border border-warn/35 bg-warn-fill/10" : "card")}>
         <div className="flex-1">
           Selected: <b>{bytes(needed)}</b> to copy into Hullport · {plan.macFreeBytes != null ? `${bytes(plan.macFreeBytes)} free on this Mac` : "free space unknown"}
           {tight && <div className="text-warn mt-0.5">That's tight: both copies exist until you uninstall OrbStack.</div>}
@@ -173,8 +173,8 @@ function SideDown({ label, hint, error }: { label: string; hint: string; error?:
   return (
     <div className="mb-3">
       <div className="font-semibold flex items-center gap-2"><Dot tone="bad" />{label}</div>
-      <div className="text-[12px] text-fg2 mt-0.5">{hint}</div>
-      {error && <div className="text-[11.5px] text-fg3 mt-0.5 selectable">{error}</div>}
+      <div className="text-caption text-fg2 mt-0.5">{hint}</div>
+      {error && <div className="text-caption text-fg3 mt-0.5 selectable">{error}</div>}
     </div>
   );
 }
@@ -183,10 +183,10 @@ function Section({ title, note, children }: { title: string; note?: string; chil
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-2 mb-2">
-        <div className="text-[12px] font-semibold text-fg2">{title}</div>
-        {note && <div className="text-[11.5px] text-fg3">{note}</div>}
+        <div className="text-caption font-semibold text-fg2">{title}</div>
+        {note && <div className="text-caption text-fg3">{note}</div>}
       </div>
-      <div className="rounded-[10px] border border-line bg-panel overflow-hidden">{children}</div>
+      <div className="card overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -197,15 +197,15 @@ function Row({ left, title, sub, right }: { left?: ReactNode; title: ReactNode; 
       {left && <div className="w-4 flex justify-center shrink-0">{left}</div>}
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{title}</div>
-        {sub && <div className="text-[11.5px] text-fg2">{sub}</div>}
+        {sub && <div className="text-caption text-fg2">{sub}</div>}
       </div>
-      {right && <div className="text-[12px] text-fg2 text-right shrink-0 max-w-[280px]">{right}</div>}
+      {right && <div className="text-caption text-fg2 text-right shrink-0 max-w-[280px]">{right}</div>}
     </div>
   );
 }
 
 function Check({ checked, onChange, disabled }: { checked: boolean; onChange: (on: boolean) => void; disabled?: boolean }) {
-  return <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} className="accent-[var(--c-accent)]" />;
+  return <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />;
 }
 
 /** What happened to an item during this run, or the reason it won't be copied. */
@@ -272,7 +272,7 @@ function Report({ results, projects }: { results: MigrationItem[]; projects: [st
   const failed = by("failed");
   const skipped = by("skipped");
   return (
-    <div className={cx("rounded-[10px] border p-4 mb-5 text-[12.5px]", failed.length ? "border-bad/35 bg-bad/5" : "border-ok/35 bg-ok/5")} data-testid="migration-report">
+    <div className={cx("rounded-card border p-4 mb-5 text-body", failed.length ? "border-bad/35 bg-bad/5" : "border-ok/40 bg-ok-fill/12")} data-testid="migration-report">
       <div className="font-semibold mb-1">
         Copied {by("done").length} · skipped {skipped.length} · failed {failed.length}
       </div>
@@ -285,7 +285,7 @@ function Report({ results, projects }: { results: MigrationItem[]; projects: [st
         <div className="mt-2">
           Next, start each Compose project against Hullport from its folder:
           {projects.map(([name, p]) => (
-            <div key={name} className="mono text-[11.5px] mt-1 selectable">cd {p.dir ?? name} && docker compose up -d</div>
+            <div key={name} className="mono text-caption mt-1 selectable">cd {p.dir ?? name} && docker compose up -d</div>
           ))}
         </div>
       )}

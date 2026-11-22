@@ -29,14 +29,17 @@ function useCounts(): Partial<Record<Section, string>> {
   };
 }
 
+/** The active item takes the selected fill: graphite in light mode, Volt in dark mode. */
+const navItem = "flex items-center gap-2.5 h-[28px] px-2.5 rounded-control text-body transition-colors hover:duration-100";
+
 export function Sidebar() {
   const section = useUi((s) => s.section);
   const counts = useCounts();
   return (
-    <aside className="w-[210px] shrink-0 h-full flex flex-col bg-sidebar border-r border-line" aria-label="Sidebar">
+    <aside className="w-[210px] shrink-0 h-full flex flex-col bg-bg border-r border-line-strong" aria-label="Sidebar">
       <div data-tauri-drag-region className="h-[52px] shrink-0" />
-      <div className="px-3 pb-1 text-[11px] font-semibold text-fg3 tracking-[0.02em]">Docker</div>
-      <nav className="px-2 flex flex-col gap-[1px]" aria-label="Sections">
+      <div className="px-4 pb-1.5 text-caption font-medium text-fg3">Docker</div>
+      <nav className="px-2 flex flex-col gap-0.5" aria-label="Sections">
         {SECTIONS.map((s) => (
           <button
             key={s.id}
@@ -44,15 +47,12 @@ export function Sidebar() {
             onClick={() => go(s.id)}
             title={`${s.label} (⌘${s.key})`}
             aria-current={section === s.id ? "page" : undefined}
-            className={cx(
-              "flex items-center gap-2.5 h-[28px] px-2 rounded-[6px] text-[13px] transition-colors",
-              section === s.id ? "bg-fg/10 text-fg font-medium" : "text-fg/85 hover:bg-hover",
-            )}
+            className={cx(navItem, section === s.id ? "bg-sel on-sel font-medium" : "text-fg hover:bg-hover")}
           >
-            <span className={cx("w-4 flex justify-center", section === s.id ? "text-accent" : "text-fg2")}>{s.icon}</span>
+            <span className={cx("w-4 flex justify-center", section === s.id ? "text-fg" : "text-fg2")}>{s.icon}</span>
             <span className="flex-1 text-left">{s.label}</span>
             {counts[s.id] && (
-              <span className={cx("text-[11px] tabular-nums", s.id === "containers" ? "text-ok font-semibold" : "text-fg3")}>{counts[s.id]}</span>
+              <span className={cx("text-badge tabular-nums", s.id === "containers" ? "text-ok font-semibold" : "text-fg3 font-medium")}>{counts[s.id]}</span>
             )}
           </button>
         ))}
@@ -63,9 +63,9 @@ export function Sidebar() {
           data-nav-settings="engines"
           onClick={() => go("engines")}
           aria-current={section === "engines" ? "page" : undefined}
-          className={cx("w-full flex items-center gap-2.5 h-[28px] px-2 rounded-[6px] text-[13px]", section === "engines" ? "bg-fg/10 text-fg font-medium" : "text-fg/85 hover:bg-hover")}
+          className={cx("w-full", navItem, section === "engines" ? "bg-sel on-sel font-medium" : "text-fg hover:bg-hover")}
         >
-          <span className={cx("w-4 flex justify-center", section === "engines" ? "text-accent" : "text-fg2")}><IconPlug size={15} /></span>
+          <span className={cx("w-4 flex justify-center", section === "engines" ? "text-fg" : "text-fg2")}><IconPlug size={15} /></span>
           <span className="flex-1 text-left">Engines</span>
         </button>
       </nav>
@@ -106,29 +106,29 @@ function EngineStatus() {
   };
 
   return (
-    <div className="m-2 p-2 rounded-[9px] border border-line bg-fg/[0.03]" data-testid="engine-status">
+    <div className="m-2 p-2.5 card" data-testid="engine-status">
       <div className="flex items-center gap-2">
         <Dot tone={tone} pulse={st.state === "connecting" || booting} />
-        <span className="text-[12px] font-medium" data-testid="engine-state">{label}</span>
-        {st.serverVersion && <span className="text-[11px] text-fg3 ml-auto tabular-nums">v{st.serverVersion}</span>}
+        <span className="text-caption font-medium" data-testid="engine-state">{label}</span>
+        {st.serverVersion && <span className="text-badge text-fg3 ml-auto tabular-nums">v{st.serverVersion}</span>}
       </div>
       <button
         onClick={(e) => openContexts(e.currentTarget)}
-        className="mt-1.5 w-full flex items-center gap-1 h-[22px] px-1.5 -mx-0.5 rounded-[5px] hover:bg-hover text-left"
+        className="mt-1.5 w-full flex items-center gap-1 h-[24px] px-2 -mx-0.5 rounded-control bg-well hover:bg-well-hover hover:duration-100 transition-colors text-left"
         title={st.host || "Docker context"}
         aria-label="Docker context"
       >
-        <span className="text-[11.5px] text-fg2 truncate flex-1" data-testid="engine-context">{st.context || "—"}</span>
+        <span className="text-caption text-fg2 truncate flex-1" data-testid="engine-context">{st.context || "—"}</span>
         <IconChevronDown size={11} className="text-fg3" />
       </button>
       {st.state === "connected" && st.fallbackFrom && (
-        <div className="mt-1 text-[11px] text-warn leading-snug" data-testid="engine-fallback">
+        <div className="mt-1.5 text-badge text-warn leading-snug" data-testid="engine-fallback">
           {st.fallbackFrom} isn't answering; using {st.context} for now.
         </div>
       )}
-      {booting && engine.stepLabel && <div className="mt-1 text-[11px] text-fg2 leading-snug">{engine.stepLabel}…</div>}
+      {booting && engine.stepLabel && <div className="mt-1.5 text-badge text-fg2 leading-snug">{engine.stepLabel}…</div>}
       {st.state === "disconnected" && !booting && st.error && (
-        <div className="mt-1 text-[11px] text-bad/90 leading-snug line-clamp-3" title={st.error}>{st.error}</div>
+        <div className="mt-1.5 text-badge text-bad leading-snug line-clamp-3" title={st.error}>{st.error}</div>
       )}
     </div>
   );

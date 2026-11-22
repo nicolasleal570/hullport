@@ -57,7 +57,7 @@ export function NewBuildDialog({ initial, onClose }: { initial?: BuildConfig; on
 
   return (
     <Modal title="New Build" subtitle="Runs docker buildx build with BuildKit and loads the result into the engine." onClose={onClose} width={580} footer={<>
-      {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+      {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
       <Button onClick={onClose}>Cancel</Button>
       <Button kind="primary" busy={busy} disabled={!c.contextDir || !c.image} onClick={submit}>Build</Button>
     </>}>

@@ -56,7 +56,7 @@ export function VolumesView() {
             <Dot tone={users.some((c) => c.State === "running") ? "ok" : "idle"} />
             <div className="min-w-0">
               <div className="truncate font-medium leading-tight">{isAnon(v.Name) ? v.Name.slice(0, 12) + "…" : v.Name}</div>
-              <div className="truncate text-[11.5px] text-fg2 leading-tight">
+              <div className="truncate text-caption text-fg2 leading-tight">
                 {users.length ? `${users.length} container${users.length > 1 ? "s" : ""}` : "Unused"}{project ? ` · ${project}` : ""}{isAnon(v.Name) ? " · anonymous" : ""}
               </div>
             </div>
@@ -64,9 +64,9 @@ export function VolumesView() {
         );
       },
     },
-    { id: "driver", header: "Driver", width: "64px", cell: (v) => <span className="text-fg2 text-[12px]">{v.Driver}</span> },
-    { id: "size", header: "Size", width: "74px", align: "right", sort: (a, b) => (usage?.get(a.Name) ?? -1) - (usage?.get(b.Name) ?? -1), cell: (v) => <span className="text-fg2 text-[12px] tabular-nums">{usage ? bytes(usage.get(v.Name)) : "…"}</span> },
-    { id: "created", header: "Created", width: "80px", align: "right", sort: (a, b) => Date.parse(a.CreatedAt ?? "") - Date.parse(b.CreatedAt ?? ""), cell: (v) => <span className="text-fg2 text-[12px] tabular-nums">{ago(v.CreatedAt)}</span> },
+    { id: "driver", header: "Driver", width: "64px", cell: (v) => <span className="text-fg2 text-caption">{v.Driver}</span> },
+    { id: "size", header: "Size", width: "74px", align: "right", sort: (a, b) => (usage?.get(a.Name) ?? -1) - (usage?.get(b.Name) ?? -1), cell: (v) => <span className="text-fg2 text-caption tabular-nums">{usage ? bytes(usage.get(v.Name)) : "…"}</span> },
+    { id: "created", header: "Created", width: "80px", align: "right", sort: (a, b) => Date.parse(a.CreatedAt ?? "") - Date.parse(b.CreatedAt ?? ""), cell: (v) => <span className="text-fg2 text-caption tabular-nums">{ago(v.CreatedAt)}</span> },
   ];
 
   const menu = (v: Volume): MenuItem[] => [
@@ -112,7 +112,7 @@ export function VolumesView() {
   const total = usage ? [...usage.values()].reduce((a, b) => a + b, 0) : null;
   return (
     <div className="h-full flex flex-col" data-section="volumes">
-      <Toolbar section="volumes" title="Volumes" count={q.data?.length} filters={total != null ? <span className="text-fg3 text-[12px] tabular-nums">{bytes(total)} used</span> : undefined}>
+      <Toolbar section="volumes" title="Volumes" count={q.data?.length} filters={total != null ? <span className="text-fg3 text-caption tabular-nums">{bytes(total)} used</span> : undefined}>
         <SortButton section="volumes" special="Number of Containers" />
         <IconButton title="Refresh (⌘R)" onClick={refreshAll}><IconRefresh size={14} /></IconButton>
         <IconButton title="New volume (⌘N)" onClick={() => setCreating(true)}><IconPlus size={15} /></IconButton>
@@ -178,26 +178,26 @@ function VolumeDetail({ v, users, size }: { v: Volume; users: ContainerSummary[]
               <Row label="Created">{dateTime(v.CreatedAt)}</Row>
               <Row label="Mountpoint" mono>
                 <span className="break-all">{v.Mountpoint}</span>
-                <div className="text-fg3 font-sans text-[11px] mt-0.5">Path inside the engine's Linux VM, not on your Mac. Use Files to browse it.</div>
+                <div className="text-fg3 font-sans text-badge mt-0.5">Path inside the engine's Linux VM, not on your Mac. Use Files to browse it.</div>
               </Row>
               {v.Options && Object.keys(v.Options).length > 0 && <Row label="Options" mono>{Object.entries(v.Options).map(([k, x]) => `${k}=${x}`).join(", ")}</Row>}
             </Section>
             <Section title={`Used by (${users.length})`}>
-              {users.length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">No containers reference this volume</div> : users.map((c) => {
+              {users.length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">No containers reference this volume</div> : users.map((c) => {
                 const m = c.Mounts?.find((x) => x.Name === v.Name);
                 return (
                   <button key={c.Id} onClick={() => go("containers", c.Id, "info")} className="w-full flex items-center gap-2 px-3 h-[30px] border-b border-line last:border-b-0 hover:bg-hover text-left">
                     <Dot tone={c.State === "running" ? "ok" : "idle"} />
                     <span className="flex-1 truncate">{containerName(c)}</span>
-                    <span className="mono text-[11px] text-fg2">{m?.Destination}</span>
+                    <span className="mono text-badge text-fg2">{m?.Destination}</span>
                     {m?.RW === false && <Badge>ro</Badge>}
                   </button>
                 );
               })}
             </Section>
             <Section title="Labels">
-              {!v.Labels || !Object.keys(v.Labels).length ? <div className="px-3 py-2 text-fg3 text-[12px]">No labels</div> : Object.entries(v.Labels).map(([k, x]) => (
-                <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{k}</span> = {x}</div>
+              {!v.Labels || !Object.keys(v.Labels).length ? <div className="px-3 py-2 text-fg3 text-caption">No labels</div> : Object.entries(v.Labels).map(([k, x]) => (
+                <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{k}</span> = {x}</div>
               ))}
             </Section>
           </div>
@@ -233,7 +233,7 @@ function CreateVolumeDialog({ onClose }: { onClose: () => void }) {
   };
   return (
     <Modal title="New Volume" onClose={onClose} width={480} footer={<>
-      {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+      {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
       <Button onClick={onClose}>Cancel</Button>
       <Button kind="primary" busy={busy} onClick={submit}>Create</Button>
     </>}>

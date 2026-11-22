@@ -111,18 +111,18 @@ export function PullDialog({ onClose, onRun }: { onClose: () => void; onRun: (re
       </form>
       {phase !== "idle" && (
         <div className="mt-4 flex flex-col gap-2" data-testid="pull-progress">
-          <div className="flex items-center gap-2 text-[12.5px]">
+          <div className="flex items-center gap-2 text-body">
             {phase === "done" && <span className="text-ok inline-flex items-center gap-1"><IconCheck size={13} /> Pulled {pulledRef}</span>}
             {phase === "error" && <span className="text-bad inline-flex items-center gap-1"><IconWarn size={13} /> Pull failed</span>}
             {phase === "canceled" && <span className="text-fg2">Canceled</span>}
             {phase === "pulling" && <span className="text-fg2">Pulling… {entries.length ? `${doneCount}/${entries.length} layers` : ""} {totals.tot ? `· ${bytes(totals.cur)} of ${bytes(totals.tot)}` : ""}</span>}
           </div>
           <Progress value={phase === "error" || phase === "canceled" ? 0 : overall} />
-          {error && <div className="text-bad text-[12px] whitespace-pre-wrap break-words selectable">{error}</div>}
+          {error && <div className="text-bad text-caption whitespace-pre-wrap break-words selectable">{error}</div>}
           {entries.length > 0 && (
-            <div className="max-h-[180px] overflow-auto rounded-[8px] border border-line">
+            <div className="max-h-[180px] overflow-auto rounded-control border border-line">
               {entries.map(([id, l]) => (
-                <div key={id} className="flex items-center gap-3 px-2.5 h-[24px] border-b border-line/60 last:border-b-0 text-[11.5px]">
+                <div key={id} className="flex items-center gap-3 px-2.5 h-[24px] border-b border-line/60 last:border-b-0 text-caption">
                   <span className="mono text-fg2 w-[96px]">{id}</span>
                   <span className="flex-1 truncate">{l.status}</span>
                   {l.total ? <span className="w-[90px]"><Progress value={(l.current ?? 0) / l.total} /></span> : null}
@@ -130,7 +130,7 @@ export function PullDialog({ onClose, onRun }: { onClose: () => void; onRun: (re
               ))}
             </div>
           )}
-          {messages.length > 0 && <div className="mono text-[11px] text-fg3 whitespace-pre-wrap break-all">{messages.join("\n")}</div>}
+          {messages.length > 0 && <div className="mono text-badge text-fg3 whitespace-pre-wrap break-all">{messages.join("\n")}</div>}
         </div>
       )}
     </Modal>

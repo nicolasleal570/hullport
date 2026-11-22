@@ -111,7 +111,7 @@ function InfoTab({ c }: { c: ContainerSummary }) {
         </Row>
         <Row label="ID" mono><span className="inline-flex items-center gap-1">{shortId(c.Id)}<CopyButton text={c.Id} title="Copy ID" /></span></Row>
         <Row label="Image" mono>
-          <button className="text-accent hover:underline text-left" onClick={() => c.ImageID && go("images", c.ImageID, "info")}>{c.Image}</button>
+          <button className="link text-left" onClick={() => c.ImageID && go("images", c.ImageID, "info")}>{c.Image}</button>
         </Row>
         <Row label="Command" mono>{cmd || null}</Row>
         <Row label="Created">{dateTime(c.Created)} <span className="text-fg3">({ago(c.Created)})</span></Row>
@@ -123,14 +123,14 @@ function InfoTab({ c }: { c: ContainerSummary }) {
 
       <Section title="Ports">
         {Object.keys(portMap).length === 0 ? (
-          <div className="px-3 py-2 text-fg3 text-[12px]">No exposed ports</div>
+          <div className="px-3 py-2 text-fg3 text-caption">No exposed ports</div>
         ) : (
           Object.entries(portMap).map(([cp, binds]) => (
             <Row key={cp} label={cp} mono>
               {binds?.length ? (
                 <span className="flex flex-wrap gap-2">
                   {binds.filter((b, i, a) => a.findIndex((x) => x.HostPort === b.HostPort) === i).map((b) => (
-                    <button key={b.HostIp + b.HostPort} className="text-accent hover:underline inline-flex items-center gap-1" onClick={() => openPort(Number(b.HostPort))}>
+                    <button key={b.HostIp + b.HostPort} className="link inline-flex items-center gap-1" onClick={() => openPort(Number(b.HostPort))}>
                       localhost:{b.HostPort} <IconExternal size={10} />
                     </button>
                   ))}
@@ -143,19 +143,19 @@ function InfoTab({ c }: { c: ContainerSummary }) {
 
       <Section title="Mounts">
         {!(d?.Mounts ?? c.Mounts)?.length ? (
-          <div className="px-3 py-2 text-fg3 text-[12px]">No mounts</div>
+          <div className="px-3 py-2 text-fg3 text-caption">No mounts</div>
         ) : (
           (d?.Mounts ?? c.Mounts ?? []).map((m: any, i: number) => (
             <div key={i} className="flex items-start gap-3 px-3 py-[6px] border-b border-line last:border-b-0">
               <div className="w-[118px] shrink-0 flex gap-1 pt-[1px]">
-                <Badge tone={m.Type === "volume" ? "accent" : "idle"}>{m.Type}</Badge>
+                <Badge tone={m.Type === "volume" ? "strong" : "idle"}>{m.Type}</Badge>
                 {m.RW === false && <Badge>ro</Badge>}
               </div>
               <div className="flex-1 min-w-0 selectable">
                 <div className="mono break-all">{m.Destination}</div>
-                <div className="text-[11.5px] text-fg2 break-all">
+                <div className="text-caption text-fg2 break-all">
                   {m.Type === "volume" ? (
-                    <button className="text-accent hover:underline text-left break-all" onClick={() => go("volumes", m.Name, "info")}>{m.Name}</button>
+                    <button className="link text-left break-all" onClick={() => go("volumes", m.Name, "info")}>{m.Name}</button>
                   ) : m.Source}
                 </div>
               </div>
@@ -166,12 +166,12 @@ function InfoTab({ c }: { c: ContainerSummary }) {
 
       <Section title="Networks">
         {Object.keys(networks).length === 0 ? (
-          <div className="px-3 py-2 text-fg3 text-[12px]">{d?.HostConfig?.NetworkMode ?? "None"}</div>
+          <div className="px-3 py-2 text-fg3 text-caption">{d?.HostConfig?.NetworkMode ?? "None"}</div>
         ) : (
           Object.entries(networks).map(([name, n]) => (
             <Row key={name} label={name}>
               <span className="inline-flex items-center gap-3 flex-wrap mono">
-                <button className="text-accent hover:underline font-sans" onClick={() => go("networks", n.NetworkID, "containers")}>open</button>
+                <button className="link font-sans" onClick={() => go("networks", n.NetworkID, "containers")}>open</button>
                 {n.IPAddress && <span>{n.IPAddress}{n.IPPrefixLen ? `/${n.IPPrefixLen}` : ""}</span>}
                 {n.Gateway && <span className="text-fg3">gw {n.Gateway}</span>}
                 {n.Aliases?.length ? <span className="text-fg3">aliases {n.Aliases.join(", ")}</span> : null}
@@ -182,15 +182,15 @@ function InfoTab({ c }: { c: ContainerSummary }) {
       </Section>
 
       <Section title={`Environment (${env.length})`}>
-        {env.length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">No variables</div> : env.map((e, i) => {
+        {env.length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">No variables</div> : env.map((e, i) => {
           const k = e.indexOf("=");
           return <Row key={i} label={e.slice(0, k)} mono>{e.slice(k + 1)}</Row>;
         })}
       </Section>
 
       <Section title={`Labels (${Object.keys(labels).length})`}>
-        {Object.keys(labels).length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">No labels</div> : Object.entries(labels).map(([k, v]) => (
-          <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>
+        {Object.keys(labels).length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">No labels</div> : Object.entries(labels).map(([k, v]) => (
+          <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>
         ))}
       </Section>
     </div>

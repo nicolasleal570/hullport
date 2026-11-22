@@ -37,7 +37,6 @@ export async function runLaunchMode() {
   let mode;
   try { mode = await api.launchMode(); } catch { return; }
   if (mode.mode === "normal" || !mode.path) return;
-  document.documentElement.classList.add("opaque");
   try {
     if (mode.mode === "screenshot") await screenshot((mode.section as Section) || "containers");
     else if (mode.mode === "verify") await (await import("./verify")).verify(mode);
@@ -69,7 +68,7 @@ async function screenshot(section: Section) {
   }
   await frames(120);
   await sleep(300);
-  const opts = { pixelRatio: 1, backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--c-bg").trim() || "#1c1c1e", cacheBust: true };
+  const opts = { pixelRatio: 1, backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--c-bg").trim() || "#0f0f0f", cacheBust: true };
   await toPng(document.body, opts).catch(() => "");
   const url = await toPng(document.body, opts);
   await api.writeLaunchB64(url.slice(url.indexOf(",") + 1));

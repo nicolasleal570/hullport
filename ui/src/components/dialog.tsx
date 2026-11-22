@@ -11,21 +11,21 @@ export function Modal({
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[9vh] bg-black/35 fadein" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[9vh] bg-scrim fadein" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onMouseDown={(e) => e.stopPropagation()}
-        className="max-h-[82vh] flex flex-col rounded-[12px] border border-line-strong bg-panel shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+        className="max-h-[82vh] flex flex-col rounded-panel border border-edge bg-tile shadow-floating"
         style={{ width }}
       >
-        <div className="px-5 pt-4 pb-3">
-          <div className="text-[14px] font-semibold">{title}</div>
-          {subtitle && <div className="text-fg2 text-[12px] mt-0.5">{subtitle}</div>}
+        <div className="px-5 pt-5 pb-3">
+          <div className="text-headline font-semibold">{title}</div>
+          {subtitle && <div className="text-fg2 text-caption mt-0.5">{subtitle}</div>}
         </div>
         <div className="px-5 pb-4 overflow-auto min-h-0">{children}</div>
-        {footer && <div className="px-5 py-3 border-t border-line flex justify-end gap-2">{footer}</div>}
+        {footer && <div className="px-5 py-3.5 border-t border-line flex justify-end gap-2">{footer}</div>}
       </div>
     </div>
   );
@@ -64,7 +64,11 @@ export function ConfirmHost() {
             ref={btn}
             autoFocus
             onClick={() => done(true)}
-            className={cx("h-[24px] px-3 rounded-[6px] text-[12.5px] font-medium text-white", r.danger ? "bg-bad" : "bg-accent")}
+            // Confirming a destructive action is the one place Ember fills a button (white text passes 4.5:1).
+            className={cx(
+              "inline-flex items-center h-[28px] px-3.5 rounded-full text-body font-semibold transition-[background-color,transform] hover:duration-100 active:scale-[.97] motion-reduce:active:scale-100",
+              r.danger ? "bg-danger-fill hover:bg-danger-fill-hover text-on-danger" : "bg-primary hover:bg-primary-hover text-on-primary",
+            )}
           >
             {r.confirmLabel ?? "OK"}
           </button>
@@ -73,7 +77,7 @@ export function ConfirmHost() {
     >
       <div className="flex gap-3">
         {r.danger && <div className="text-bad mt-0.5"><IconWarn size={20} /></div>}
-        <div className="text-[12.5px] text-fg2 leading-relaxed flex-1 min-w-0 break-words">
+        <div className="text-body text-fg2 leading-relaxed flex-1 min-w-0 break-words">
           {r.message}
           {r.option && <div className="mt-3 text-fg"><Checkbox checked={opt} onChange={setOpt} label={r.option.label} hint={r.option.hint} /></div>}
         </div>

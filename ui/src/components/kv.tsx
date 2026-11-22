@@ -27,7 +27,7 @@ export function KVEditor({ value, onChange, keyPlaceholder = "KEY", valuePlaceho
           <IconButton title="Remove" onClick={() => onChange(value.filter((_, j) => j !== i))}><IconX size={12} /></IconButton>
         </div>
       ))}
-      <button type="button" onClick={() => onChange([...value, { key: "", value: "" }])} className="self-start inline-flex items-center gap-1 text-accent text-[12px] hover:underline">
+      <button type="button" onClick={() => onChange([...value, { key: "", value: "" }])} className="self-start inline-flex items-center gap-1 h-[24px] px-2 -mx-2 rounded-control text-caption font-medium text-fg2 hover:text-fg hover:bg-hover transition-colors hover:duration-100">
         <IconPlus size={12} /> {addLabel}
       </button>
     </div>

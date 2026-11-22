@@ -152,23 +152,13 @@ fn main() {
                 .min_inner_size(920.0, 560.0)
                 .focused(!quiet && !background)
                 .visible(!background);
+            // Opaque, like the rest of the design system: the sidebar is drawn by the page, not vibrancy.
             #[cfg(target_os = "macos")]
             {
-                use tauri::utils::config::WindowEffectsConfig;
-                use tauri::window::{Effect, EffectState};
                 win = win
                     .title_bar_style(tauri::TitleBarStyle::Overlay)
                     .hidden_title(true)
                     .traffic_light_position(tauri::LogicalPosition::new(16.0, 20.0));
-                if !quiet {
-                    win = win.transparent(true).effects(WindowEffectsConfig {
-                        effects: vec![Effect::Sidebar],
-                        state: Some(EffectState::FollowsWindowActiveState),
-                        radius: None,
-                        color: None,
-                        interactive: false,
-                    });
-                }
             }
             win.build()?;
             if !quiet {

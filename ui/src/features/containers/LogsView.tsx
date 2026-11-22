@@ -97,7 +97,7 @@ export function LogsView({ id, running }: { id: string; running: boolean }) {
     while (true) {
       const j = lower.indexOf(n, i);
       if (j < 0) break;
-      parts.push(text.slice(i, j), <mark key={k++} className="bg-warn/40 text-fg rounded-[2px]">{text.slice(j, j + n.length)}</mark>);
+      parts.push(text.slice(i, j), <mark key={k++} className="bg-warn-fill/45 text-fg rounded-[3px]">{text.slice(j, j + n.length)}</mark>);
       i = j + n.length;
     }
     parts.push(text.slice(i));
@@ -105,26 +105,26 @@ export function LogsView({ id, running }: { id: string; running: boolean }) {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="h-[36px] shrink-0 flex items-center gap-2 px-3 border-b border-line">
+    <div className="h-full flex flex-col bg-tile">
+      <div className="h-[40px] shrink-0 flex items-center gap-2 px-3 border-b border-line">
         <div className="relative">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-fg3"><IconSearch size={12} /></span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter logs" aria-label="Filter logs" className="field w-[180px] pl-6 h-[24px] text-[12px]" />
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg3 pointer-events-none"><IconSearch size={12} /></span>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter logs" aria-label="Filter logs" className="field w-[180px] pl-7 text-caption" />
         </div>
-        <select className="field h-[24px] text-[12px]" value={onlyMatches ? "only" : "all"} onChange={(e) => setOnlyMatches(e.target.value === "only")} aria-label="Search mode">
+        <select className="field text-caption" value={onlyMatches ? "only" : "all"} onChange={(e) => setOnlyMatches(e.target.value === "only")} aria-label="Search mode">
           <option value="only">Show only matching lines</option>
           <option value="all">Show all lines (highlight)</option>
         </select>
-        <label className="flex items-center gap-1 text-[12px] text-fg2"><input type="checkbox" checked={timestamps} onChange={(e) => setTimestamps(e.target.checked)} className="accent-[var(--c-accent)]" />Timestamps</label>
-        <label className="flex items-center gap-1 text-[12px] text-fg2"><input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} className="accent-[var(--c-accent)]" />Wrap</label>
+        <label className="flex items-center gap-1 text-caption text-fg2"><input type="checkbox" checked={timestamps} onChange={(e) => setTimestamps(e.target.checked)} />Timestamps</label>
+        <label className="flex items-center gap-1 text-caption text-fg2"><input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} />Wrap</label>
         <div className="flex-1" />
-        <span className="text-[11px] text-fg3 tabular-nums">{shown.length.toLocaleString()} lines</span>
+        <span className="text-badge text-fg3 tabular-nums">{shown.length.toLocaleString()} lines</span>
         <IconButton title="Copy visible logs" onClick={() => writeText(shown.map((l) => (timestamps && l.ts ? l.ts + " " : "") + l.text).join("\n"))}><IconCopy size={13} /></IconButton>
         <IconButton title="Clear view" onClick={() => setLines([])}><IconTrash size={13} /></IconButton>
       </div>
-      <div ref={box} onScroll={onScroll} className="flex-1 min-h-0 overflow-auto mono leading-[1.55] py-1.5 selectable bg-bg/60" style={{ fontSize }} data-testid="logs">
+      <div ref={box} onScroll={onScroll} className="flex-1 min-h-0 overflow-auto mono leading-[1.55] py-1.5 selectable" style={{ fontSize }} data-testid="logs">
         {shown.length === 0 && (
-          <div className="px-4 py-3 text-fg3 font-sans text-[12.5px]">
+          <div className="px-4 py-3 text-fg3 font-sans text-body">
             {q ? "No matching lines." : ended ? "No logs." : running ? "Waiting for output…" : "No logs yet."}
           </div>
         )}
@@ -134,12 +134,12 @@ export function LogsView({ id, running }: { id: string; running: boolean }) {
             <span className={wrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"}>{highlight(l.text)}</span>
           </div>
         ))}
-        {ended && shown.length > 0 && <div className="px-3 pt-2 text-fg3 font-sans text-[11.5px]">— {ended}{running ? "" : " (container stopped)"} —</div>}
+        {ended && shown.length > 0 && <div className="px-3 pt-2 text-fg3 font-sans text-caption">— {ended}{running ? "" : " (container stopped)"} —</div>}
       </div>
       {!follow && (
         <button
           onClick={() => setFollow(true)}
-          className="absolute bottom-4 right-5 h-[26px] px-2.5 rounded-full bg-accent text-white text-[12px] font-medium shadow-lg inline-flex items-center gap-1 fadein"
+          className="absolute bottom-4 right-5 h-[28px] px-3 rounded-full bg-primary hover:bg-primary-hover text-on-primary text-caption font-semibold shadow-floating inline-flex items-center gap-1 transition-colors hover:duration-100 fadein"
         >
           <IconChevronDown size={12} /> Jump to latest
         </button>

@@ -105,9 +105,10 @@ export function Table<T>(p: Props<T>) {
         onMouseDown={() => p.onSelect(key)}
         onDoubleClick={() => p.onOpen?.(key)}
         onContextMenu={(e) => { p.onSelect(key); p.onContextMenu?.(e, r); }}
+        // Inset rounded rows; the selected one takes the selected fill and re-points its contents (`.on-sel`).
         className={cx(
-          "group grid items-center gap-x-3 px-3 min-h-[34px] border-b border-line/60",
-          sel ? "bg-sel" : "hover:bg-hover",
+          "group grid items-center gap-x-3 mx-1 px-3 min-h-[34px] rounded-control",
+          sel ? "bg-sel on-sel" : "hover:bg-hover",
           p.dim?.(r) && !sel && "opacity-60",
         )}
         style={grid}
@@ -133,11 +134,11 @@ export function Table<T>(p: Props<T>) {
       onKeyDown={onKey}
       role="table"
       aria-label={p.label}
-      className="h-full overflow-y-auto overflow-x-hidden outline-none focus-visible:outline-none"
+      className="h-full overflow-y-auto overflow-x-hidden pb-1 outline-none focus-visible:outline-none focus-visible:shadow-none"
     >
       <div
         role="row"
-        className="sticky top-0 z-10 grid items-center gap-x-3 px-3 h-[26px] border-b border-line bg-bg/95 backdrop-blur text-[11.5px] text-fg2 font-medium"
+        className="sticky top-0 z-10 grid items-center gap-x-3 px-4 h-[28px] mb-1 border-b border-line bg-tile text-caption text-fg2 font-medium"
         style={grid}
       >
         {p.columns.map((c, i) => (
@@ -149,7 +150,7 @@ export function Table<T>(p: Props<T>) {
             className={cx("flex items-center gap-1 min-w-0 text-left hover:text-fg disabled:hover:text-fg2", c.align === "right" && "justify-end", i === 0 && p.groupBy && "pl-0")}
           >
             <span className="truncate">{c.header}</span>
-            {sort.id === c.id && c.sort && <span className="text-[9px]">{sort.desc ? "▼" : "▲"}</span>}
+            {sort.id === c.id && c.sort && (sort.desc ? <IconChevronDown size={10} /> : <IconChevronDown size={10} className="rotate-180" />)}
           </button>
         ))}
         {p.rowActions && <div />}
@@ -161,7 +162,7 @@ export function Table<T>(p: Props<T>) {
           <div key={"g:" + g.key} role="rowgroup">
             <div
               onClick={toggle}
-              className="flex items-center gap-1.5 px-3 h-[32px] border-b border-line/60 hover:bg-hover"
+              className="flex items-center gap-1.5 mx-1 px-3 h-[32px] rounded-control hover:bg-hover"
             >
               <span className="text-fg3 w-3">{collapsed ? <IconChevron size={12} /> : <IconChevronDown size={12} />}</span>
               {p.renderGroup ? p.renderGroup(g, collapsed, toggle) : <span className="font-medium">{g.key}</span>}

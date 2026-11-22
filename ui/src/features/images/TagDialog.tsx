@@ -30,7 +30,7 @@ export function TagDialog({ image, onClose }: { image: ImageSummary; onClose: ()
   return (
     <Modal title="Tag Image" subtitle={`Add a name to ${n.dangling ? image.Id.slice(7, 19) : `${n.repo}:${n.tag}`}`} onClose={onClose} width={440}
       footer={<>
-        {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+        {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
         <Button onClick={onClose}>Cancel</Button>
         <Button kind="primary" busy={busy} disabled={!repo.trim()} onClick={submit}>Tag</Button>
       </>}>

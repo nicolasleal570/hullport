@@ -64,12 +64,12 @@ export function MenuHost() {
       ref={ref}
       role="menu"
       onMouseDown={(e) => e.stopPropagation()}
-      className="fixed z-[100] min-w-[190px] py-[5px] px-[5px] rounded-[9px] border border-line-strong bg-raised/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] text-[13px]"
+      className="fixed z-[100] min-w-[190px] p-[5px] rounded-thumb border border-line-strong bg-raised shadow-floating text-body"
       style={{ left: pos?.x ?? m.x, top: pos?.y ?? m.y, visibility: pos ? "visible" : "hidden" }}
     >
       {m.items.map((it, i) =>
         it === "sep" ? (
-          <div key={i} className="h-px my-[4px] mx-1.5 bg-line-strong" />
+          <div key={i} className="h-px my-[4px] mx-2 bg-line" />
         ) : (
           <button
             key={i}
@@ -78,14 +78,14 @@ export function MenuHost() {
             onMouseEnter={() => setActive(i)}
             onClick={() => { set(null); it.onClick(); }}
             className={cx(
-              "w-full flex items-center gap-2 h-[24px] px-2 rounded-[5px] text-left disabled:opacity-40",
-              active === i && !it.disabled && "bg-accent text-white",
-              it.danger && active !== i && "text-bad",
+              "w-full flex items-center gap-2 h-[26px] px-2 rounded-control text-left disabled:opacity-40",
+              active === i && !it.disabled && "bg-well-hover",
+              it.danger && "text-bad",
             )}
           >
             <span className="w-4 flex justify-center opacity-90">{it.icon}</span>
             <span className="flex-1">{it.label}</span>
-            {it.shortcut && <span className={cx("text-[11.5px]", active === i ? "text-white/80" : "text-fg3")}>{it.shortcut}</span>}
+            {it.shortcut && <span className="text-caption text-fg3 tabular-nums">{it.shortcut}</span>}
           </button>
         ),
       )}

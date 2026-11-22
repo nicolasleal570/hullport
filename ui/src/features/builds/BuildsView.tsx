@@ -27,7 +27,7 @@ interface BuildRow {
 
 function statusTone(s: Status) {
   const x = s.toLowerCase();
-  if (x === "running") return "accent" as const;
+  if (x === "running") return "strong" as const;
   if (x === "succeeded" || x === "completed") return "ok" as const;
   if (x === "canceled" || x === "interrupted") return "idle" as const;
   return "bad" as const;
@@ -46,7 +46,7 @@ export function StatusPill({ s }: { s: Status }) {
   const tone = statusTone(s);
   return (
     <span className="inline-flex items-center gap-1">
-      {tone === "accent" && <IconSpinner size={11} className="text-accent" />}
+      {tone === "strong" && <IconSpinner size={11} className="text-fg" />}
       <Badge tone={tone}>{statusLabel(s)}</Badge>
     </span>
   );
@@ -111,13 +111,13 @@ export function BuildsView() {
       cell: (r) => (
         <div className="min-w-0 py-[3px]">
           <div className="truncate font-medium leading-tight">{r.name}</div>
-          <div className="truncate text-[11.5px] text-fg2 leading-tight">{r.kind === "app" ? r.steps ?? "Started here" : `BuildKit history${r.steps ? " · " + r.steps : ""}`}</div>
+          <div className="truncate text-caption text-fg2 leading-tight">{r.kind === "app" ? r.steps ?? "Started here" : `BuildKit history${r.steps ? " · " + r.steps : ""}`}</div>
         </div>
       ),
     },
     { id: "status", header: "Status", width: "96px", sort: (a, b) => a.status.localeCompare(b.status), cell: (r) => <StatusPill s={r.status} /> },
-    { id: "duration", header: "Duration", width: "70px", align: "right", sort: (a, b) => (a.durationMs ?? 0) - (b.durationMs ?? 0), cell: (r) => <span className="text-fg2 text-[12px] tabular-nums">{duration(r.durationMs)}</span> },
-    { id: "started", header: "Started", width: "80px", align: "right", sort: (a, b) => Date.parse(a.started) - Date.parse(b.started), cell: (r) => <span className="text-fg2 text-[12px] tabular-nums">{ago(r.started)}</span> },
+    { id: "duration", header: "Duration", width: "70px", align: "right", sort: (a, b) => (a.durationMs ?? 0) - (b.durationMs ?? 0), cell: (r) => <span className="text-fg2 text-caption tabular-nums">{duration(r.durationMs)}</span> },
+    { id: "started", header: "Started", width: "80px", align: "right", sort: (a, b) => Date.parse(a.started) - Date.parse(b.started), cell: (r) => <span className="text-fg2 text-caption tabular-nums">{ago(r.started)}</span> },
   ];
 
   const menu = (r: BuildRow): MenuItem[] => {
@@ -286,13 +286,13 @@ function AppBuildDetail({ row, onEdit }: { row: BuildRow; onEdit: (c: BuildConfi
       />
       <div className="flex-1 min-h-0 overflow-auto">
         {(status === "failed" && (rec?.error || failed?.error)) && (
-          <div className="m-3 mb-0 p-2.5 rounded-[8px] border border-bad/30 bg-bad/8 text-[12px] flex gap-2 items-start">
+          <div className="m-3 mb-0 p-2.5 rounded-control border border-bad/30 bg-bad/8 text-caption flex gap-2 items-start">
             <IconWarn size={14} className="text-bad shrink-0 mt-[1px]" />
             <div className="flex-1 min-w-0 selectable whitespace-pre-wrap break-words">{rec?.error ?? failed?.error}</div>
             {failed && <Button kind="ghost" onClick={() => { setTab("builds", "steps"); setUi({ stepFilter: "all" }); setShowInternal(true); setOpen((o) => ({ ...o, [failed.digest]: true })); document.querySelector(`[data-step="${CSS.escape(failed.digest)}"]`)?.scrollIntoView({ block: "center" }); }}>Show Failed Step</Button>}
           </div>
         )}
-        {l?.warnings.length ? <div className="mx-3 mt-3 p-2 rounded-[8px] border border-warn/30 bg-warn/8 text-[12px] text-warn">{l.warnings.length} warning{l.warnings.length > 1 ? "s" : ""}: {l.warnings.slice(0, 3).join(" · ")}</div> : null}
+        {l?.warnings.length ? <div className="mx-3 mt-3 p-2 rounded-control border border-warn/30 bg-warn-fill/10 text-caption text-warn">{l.warnings.length} warning{l.warnings.length > 1 ? "s" : ""}: {l.warnings.slice(0, 3).join(" · ")}</div> : null}
         {tab === "steps" && (
           <div className="p-3" data-testid="build-steps">
             <div className="flex items-center gap-3 mb-2 px-1">
@@ -303,8 +303,8 @@ function AppBuildDetail({ row, onEdit }: { row: BuildRow; onEdit: (c: BuildConfi
               />
               <Checkbox checked={showInternal} onChange={setShowInternal} label="Show [internal] and [auth] steps" />
             </div>
-            <div className="rounded-[9px] border border-line bg-panel overflow-hidden">
-              {shown.length === 0 && <div className="px-3 py-3 text-fg3 text-[12px]">{stepFilter === "failed" ? "No failed steps." : status === "running" ? "Waiting for BuildKit…" : "No steps were recorded."}</div>}
+            <div className="card overflow-hidden">
+              {shown.length === 0 && <div className="px-3 py-3 text-fg3 text-caption">{stepFilter === "failed" ? "No failed steps." : status === "running" ? "Waiting for BuildKit…" : "No steps were recorded."}</div>}
               {shown.map((v) => {
                 const done = !!v.completed || !!(v as any).durMs || (!l && !v.error);
                 const isRunning = l && status === "running" && v.started && !v.completed;
@@ -315,18 +315,18 @@ function AppBuildDetail({ row, onEdit }: { row: BuildRow; onEdit: (c: BuildConfi
                     <div onClick={() => setOpen((o) => ({ ...o, [v.digest]: !o[v.digest] }))} className="flex items-center gap-2 px-3 min-h-[30px] hover:bg-hover">
                       <span className="w-3 text-fg3">{v.logs.length > 1 || v.logs[0] ? (expanded ? <IconChevronDown size={11} /> : <IconChevron size={11} />) : null}</span>
                       <span className="w-4 flex justify-center">
-                        {v.error ? <IconX size={12} className="text-bad" /> : isRunning ? <IconSpinner size={12} className="text-accent" /> : done ? <IconCheck size={13} className="text-ok" /> : <span className="w-[6px] h-[6px] rounded-full bg-fg3" />}
+                        {v.error ? <IconX size={12} className="text-bad" /> : isRunning ? <IconSpinner size={12} className="text-fg" /> : done ? <IconCheck size={13} className="text-ok" /> : <span className="w-[6px] h-[6px] rounded-full bg-fg3" />}
                       </span>
-                      <span className={cx("flex-1 min-w-0 truncate mono text-[11.5px]", v.error && "text-bad")} title={v.name}>{v.name}</span>
+                      <span className={cx("flex-1 min-w-0 truncate mono text-caption", v.error && "text-bad")} title={v.name}>{v.name}</span>
                       {v.cached && <Badge tone="idle">cached</Badge>}
-                      {isRunning && v.progress?.total ? <span className="text-[11px] text-fg3 tabular-nums">{Math.round(((v.progress.current ?? 0) / v.progress.total) * 100)}%</span> : null}
-                      <span className="w-[48px] h-[3px] rounded-full bg-field overflow-hidden" title="Relative to the slowest step">
-                        <span className="block h-full bg-accent/70" style={{ width: `${Math.min(100, ((dur ?? 0) / maxStep) * 100)}%` }} />
+                      {isRunning && v.progress?.total ? <span className="text-badge text-fg3 tabular-nums">{Math.round(((v.progress.current ?? 0) / v.progress.total) * 100)}%</span> : null}
+                      <span className="w-[48px] h-[3px] rounded-full bg-well overflow-hidden" title="Relative to the slowest step">
+                        <span className="block h-full rounded-full bg-fg3" style={{ width: `${Math.min(100, ((dur ?? 0) / maxStep) * 100)}%` }} />
                       </span>
-                      <span className="text-[11px] text-fg3 tabular-nums w-[52px] text-right">{dur != null ? duration(dur) : isRunning ? duration(Date.now() - Date.parse(v.started!)) : ""}</span>
+                      <span className="text-badge text-fg3 tabular-nums w-[52px] text-right">{dur != null ? duration(dur) : isRunning ? duration(Date.now() - Date.parse(v.started!)) : ""}</span>
                     </div>
                     {expanded && v.logs.length > 0 && (
-                      <pre className="mono text-[11px] leading-[1.5] m-0 px-10 pb-2 whitespace-pre-wrap break-all text-fg2 selectable max-h-[320px] overflow-auto">{v.logs.join("\n")}</pre>
+                      <pre className="mono text-badge leading-[1.5] m-0 px-10 pb-2 whitespace-pre-wrap break-all text-fg2 selectable max-h-[320px] overflow-auto">{v.logs.join("\n")}</pre>
                     )}
                   </div>
                 );
@@ -337,14 +337,14 @@ function AppBuildDetail({ row, onEdit }: { row: BuildRow; onEdit: (c: BuildConfi
         {tab === "logs" && (
           <div className="relative">
             <div className="absolute right-3 top-2"><IconButton title="Copy logs" onClick={() => writeText(logText)}><IconCopy size={13} /></IconButton></div>
-            <pre className="mono text-[11.5px] leading-[1.5] m-0 p-3 whitespace-pre-wrap break-all selectable" data-testid="build-logs">{logText || "No output yet."}</pre>
+            <pre className="mono text-caption leading-[1.5] m-0 p-3 whitespace-pre-wrap break-all selectable" data-testid="build-logs">{logText || "No output yet."}</pre>
           </div>
         )}
         {tab === "config" && (
           <div className="p-4">
             <Section title="Result">
               <Row label="Status"><StatusPill s={status} /></Row>
-              <Row label="Image" mono>{status === "succeeded" ? <button className="text-accent hover:underline" onClick={() => go("images", rec?.imageId ?? null, "info")}>{imageRef}</button> : imageRef}</Row>
+              <Row label="Image" mono>{status === "succeeded" ? <button className="link" onClick={() => go("images", rec?.imageId ?? null, "info")}>{imageRef}</button> : imageRef}</Row>
               <Row label="Image ID" mono>{rec?.imageId ? shortId(rec.imageId) : null}</Row>
               <Row label="Duration">{duration(elapsed)}</Row>
               <Row label="Steps">{verts.length ? `${verts.length} total · ${verts.filter((v) => v.cached).length} cached` : null}</Row>
@@ -391,7 +391,7 @@ function HistoryDetail({ row }: { row: BuildRow }) {
         {info.error != null && <ErrorBox error={info.error} />}
         {tab === "steps" && (info.isLoading ? <Loading /> : d && (
           <div className="p-4 fadein">
-            {d.Error && <div className="mb-3 p-2.5 rounded-[8px] border border-bad/30 bg-bad/8 text-[12px] selectable whitespace-pre-wrap">{d.Error.Message ?? JSON.stringify(d.Error)}</div>}
+            {d.Error && <div className="mb-3 p-2.5 rounded-control border border-bad/30 bg-bad/8 text-caption selectable whitespace-pre-wrap">{d.Error.Message ?? JSON.stringify(d.Error)}</div>}
             <Section title="Build">
               <Row label="Name" mono>{d.Name}</Row>
               <Row label="Dockerfile" mono>{d.Dockerfile}</Row>
@@ -405,17 +405,17 @@ function HistoryDetail({ row }: { row: BuildRow }) {
             </Section>
             {d.Labels?.length > 0 && (
               <Section title="Labels">
-                {d.Labels.map((x: any) => <div key={x.Name} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{x.Name}</span> = {x.Value}</div>)}
+                {d.Labels.map((x: any) => <div key={x.Name} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{x.Name}</span> = {x.Value}</div>)}
               </Section>
             )}
             {d.Materials?.length > 0 && (
               <Section title="Base images">
-                {d.Materials.map((m: any) => <div key={m.URI} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all">{decodeURIComponent(m.URI)}</div>)}
+                {d.Materials.map((m: any) => <div key={m.URI} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all">{decodeURIComponent(m.URI)}</div>)}
               </Section>
             )}
           </div>
         ))}
-        {tab === "logs" && (logs.isLoading ? <Loading /> : logs.error ? <ErrorBox error={logs.error} /> : <pre className="mono text-[11.5px] leading-[1.5] m-0 p-3 whitespace-pre-wrap break-all selectable">{logs.data || "No logs stored."}</pre>)}
+        {tab === "logs" && (logs.isLoading ? <Loading /> : logs.error ? <ErrorBox error={logs.error} /> : <pre className="mono text-caption leading-[1.5] m-0 p-3 whitespace-pre-wrap break-all selectable">{logs.data || "No logs stored."}</pre>)}
         {tab === "config" && d && <JsonView value={d} />}
       </div>
     </div>

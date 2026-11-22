@@ -5,11 +5,17 @@ import { api, errMsg } from "../../lib/api";
 import { Button, Empty } from "../../components/ui";
 import { IconTerminal } from "../../components/icons";
 
+/** The terminal is HUD: always graphite, in both appearances (styles.css `--c-hud-*`). */
 function theme() {
-  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-  return dark
-    ? { background: "#161618", foreground: "#e6e6e8", cursor: "#e6e6e8", selectionBackground: "#3a5f9a88" }
-    : { background: "#ffffff", foreground: "#1d1d1f", cursor: "#1d1d1f", selectionBackground: "#b3d4ff" };
+  const css = getComputedStyle(document.documentElement);
+  const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+  return {
+    background: v("--c-hud", "#1a1a1a"),
+    foreground: v("--c-hud-fg", "#ffffff"),
+    cursor: v("--c-hud-cursor", "#d4f53c"),
+    cursorAccent: v("--c-hud", "#1a1a1a"),
+    selectionBackground: v("--c-hud-selection", "rgba(212, 245, 60, 0.3)"),
+  };
 }
 
 export function TerminalView({ id, running, visible }: { id: string; running: boolean; visible: boolean }) {
@@ -75,7 +81,7 @@ export function TerminalView({ id, running, visible }: { id: string; running: bo
     <div className="absolute inset-0 flex flex-col" style={{ background: theme().background }}>
       <div ref={host} className="flex-1 min-h-0" data-testid="terminal" />
       {exit && (
-        <div className="shrink-0 flex items-center gap-3 px-3 h-[36px] border-t border-line bg-panel text-[12px]">
+        <div className="shrink-0 flex items-center gap-3 px-3 h-[40px] border-t border-line bg-tile text-caption">
           <span className="text-fg2 flex-1">{exit}</span>
           <Button kind="primary" onClick={() => setGen((g) => g + 1)}>Reconnect</Button>
         </div>

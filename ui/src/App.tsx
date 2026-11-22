@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Sidebar, SECTIONS } from "./components/Sidebar";
 import { MenuHost } from "./components/menu";
 import { ConfirmHost } from "./components/dialog";
-import { Button, Empty, cx } from "./components/ui";
+import { Button, Dot, Empty, cx } from "./components/ui";
 import { IconCheck, IconPlug, IconSpinner, IconX } from "./components/icons";
 import { api, type EngineProgress } from "./lib/api";
 import { refreshAll, useEngineBridge, useEngineProgress, useStatus } from "./lib/queries";
@@ -91,8 +91,8 @@ function EngineDown({ section }: { section: string }) {
   const title = SECTIONS.find((s) => s.id === section)?.label ?? "";
   return (
     <div className="h-full flex flex-col" data-section={section}>
-      <div data-tauri-drag-region className="h-[52px] shrink-0 flex items-center pl-4 border-b border-line">
-        <h1 data-tauri-drag-region className="text-[15px] font-semibold">{title}</h1>
+      <div data-tauri-drag-region className="h-[52px] shrink-0 flex items-center pl-4 bg-tile border-b border-line">
+        <h1 data-tauri-drag-region className="text-headline font-semibold">{title}</h1>
       </div>
       {engine.state === "starting" ? (
         <EngineStarting engine={engine} />
@@ -120,11 +120,11 @@ function Toasts() {
         <div
           key={t.id}
           className={cx(
-            "pointer-events-auto fadein max-w-[420px] flex items-start gap-2 pl-3 pr-1.5 py-2 rounded-[9px] border shadow-[0_8px_24px_rgba(0,0,0,0.3)] backdrop-blur-xl text-[12.5px]",
-            t.kind === "error" ? "border-bad/40 bg-raised/95" : "border-line-strong bg-raised/95",
+            "pointer-events-auto fadein max-w-[420px] flex items-start gap-2 pl-3 pr-1.5 py-2 rounded-thumb border bg-raised shadow-floating text-body",
+            t.kind === "error" ? "border-bad/40" : "border-line-strong",
           )}
         >
-          <span className={cx("w-[7px] h-[7px] rounded-full mt-[5px] shrink-0", t.kind === "error" ? "bg-bad" : t.kind === "ok" ? "bg-ok" : "bg-accent")} />
+          <span className="mt-[4px] flex"><Dot tone={t.kind === "error" ? "bad" : t.kind === "ok" ? "ok" : "idle"} /></span>
           <span className="flex-1 break-words selectable">{t.text}</span>
           <button onClick={() => dismiss(t.id)} className="text-fg3 hover:text-fg p-0.5" aria-label="Dismiss"><IconX size={11} /></button>
         </div>

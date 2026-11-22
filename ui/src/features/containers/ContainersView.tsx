@@ -3,7 +3,7 @@ import { useShortcut } from "../../components/hooks";
 import { SortButton, useListSort } from "../../components/sort";
 import { Toolbar, MasterDetail } from "../../components/layout";
 import { Table, type Column } from "../../components/table";
-import { Badge, Dot, Empty, ErrorBox, IconButton, Loading } from "../../components/ui";
+import { Badge, Button, Dot, Empty, ErrorBox, IconButton, Loading } from "../../components/ui";
 import { IconContainers, IconExternal, IconPlay, IconPlus, IconRefresh, IconStop, IconTerminal, IconTrash } from "../../components/icons";
 import { openMenu } from "../../components/menu";
 import { ago, composeProject, containerName, containerTitle, matches, publishedPorts, stateTone } from "../../lib/format";
@@ -43,7 +43,7 @@ export function ContainersView() {
           <Dot tone={stateTone(c.State)} pulse={c.State === "restarting"} />
           <div className="min-w-0">
             <div className="truncate font-medium leading-tight">{containerTitle(c)}</div>
-            <div className="truncate text-[11.5px] text-fg2 leading-tight">{c.Image}</div>
+            <div className="truncate text-caption text-fg2 leading-tight">{c.Image}</div>
           </div>
         </div>
       ),
@@ -55,7 +55,7 @@ export function ContainersView() {
         const health = /\((healthy|unhealthy|health: starting)\)/.exec(c.Status ?? "")?.[1];
         const text = (c.State === "paused" ? "Paused" : c.Status ?? "").replace(/\s*\((healthy|unhealthy|health: starting)\)/, "");
         return (
-          <span className="text-fg2 text-[12px] inline-flex items-center gap-1.5" title={c.Status}>
+          <span className="text-fg2 text-caption inline-flex items-center gap-1.5" title={c.Status}>
             {text}
             {health && <span className={health === "healthy" ? "text-ok" : health === "unhealthy" ? "text-bad" : "text-warn"} title={health}>●</span>}
           </span>
@@ -75,12 +75,12 @@ export function ContainersView() {
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => openPort(p.host)}
                 title={`Open http://localhost:${p.host} (→ ${p.container}/${p.proto})`}
-                className="mono text-[11px] px-1.5 h-[18px] rounded-[4px] bg-accent-soft text-accent hover:underline inline-flex items-center gap-0.5"
+                className="mono text-badge px-1.5 h-[18px] rounded-label bg-well text-fg hover:bg-well-hover inline-flex items-center gap-0.5 transition-colors hover:duration-100"
               >
                 {p.host}<IconExternal size={9} />
               </button>
             ))}
-            {ports.length > 3 && <span className="text-fg3 text-[11px]">+{ports.length - 3}</span>}
+            {ports.length > 3 && <span className="text-fg3 text-badge">+{ports.length - 3}</span>}
           </div>
         );
       },
@@ -88,7 +88,7 @@ export function ContainersView() {
     {
       id: "created", header: "Created", width: "78px", align: "right",
       sort: (a, b) => (a.Created ?? 0) - (b.Created ?? 0),
-      cell: (c) => <span className="text-fg2 text-[12px] tabular-nums">{ago(c.Created)}</span>,
+      cell: (c) => <span className="text-fg2 text-caption tabular-nums">{ago(c.Created)}</span>,
     },
   ];
 
@@ -99,7 +99,7 @@ export function ContainersView() {
   else if (q.error) list = <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   else if (!q.data?.length)
     list = (
-      <Empty icon={<IconContainers />} title="No containers yet" action={<button className="text-accent text-[12.5px] hover:underline" onClick={() => setCreating(true)}>Create a container</button>}>
+      <Empty icon={<IconContainers />} title="No containers yet" action={<Button onClick={() => setCreating(true)}>Create a Container</Button>}>
         Containers run your apps in isolation. Start one here, from an image, or with <span className="mono">docker run</span>.
       </Empty>
     );
@@ -134,7 +134,7 @@ export function ContainersView() {
               <Dot tone={running === g.rows.length ? "ok" : running ? "warn" : "idle"} />
               <span className="font-semibold truncate">{g.key}</span>
               <Badge tone="idle">Compose</Badge>
-              <span className="text-fg3 text-[11.5px]">{running}/{g.rows.length} running</span>
+              <span className="text-fg3 text-caption">{running}/{g.rows.length} running</span>
               <div className="flex-1" />
               {running < g.rows.length && (
                 <IconButton title="Start all" onClick={() => g.rows.filter((c) => c.State !== "running").forEach((c) => act(c, "start"))}><IconPlay size={12} /></IconButton>
@@ -168,8 +168,8 @@ export function ContainersView() {
         title="Containers"
         count={q.data?.length}
         filters={
-          <label className="flex items-center gap-1.5 text-[12px] text-fg2" title="Show Stopped Containers">
-            <input type="checkbox" checked={showStopped} onChange={(e) => setUi({ showStopped: e.target.checked })} className="accent-[var(--c-accent)]" />
+          <label className="flex items-center gap-1.5 text-caption text-fg2" title="Show Stopped Containers">
+            <input type="checkbox" checked={showStopped} onChange={(e) => setUi({ showStopped: e.target.checked })} />
             Show stopped
             <span className="text-fg3">· {running} running</span>
           </label>

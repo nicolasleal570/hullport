@@ -13,8 +13,8 @@ function Spark({ values, max }: { values: number[]; max: number }) {
   const pts = values.map((v, i) => `${(i / (N - 1)) * w},${h - (Math.min(v, m) / m) * (h - 3) - 1.5}`).join(" ");
   return (
     <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="block">
-      <polyline points={`0,${h} ${pts} ${((values.length - 1) / (N - 1)) * w},${h}`} fill="var(--c-accent-soft)" stroke="none" />
-      <polyline points={pts} fill="none" stroke="var(--c-accent)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <polyline points={`0,${h} ${pts} ${((values.length - 1) / (N - 1)) * w},${h}`} fill="color-mix(in srgb, var(--c-sel) 14%, transparent)" stroke="none" />
+      <polyline points={pts} fill="none" stroke="var(--c-sel)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -48,7 +48,7 @@ export function StatsView({ id, running }: { id: string; running: boolean }) {
   const cpuMax = Math.max(100, ...samples.map((s) => s.cpuPercent));
   return (
     <div className="h-full overflow-auto p-4 fadein" data-testid="stats">
-      {err && <div className="text-bad text-[12px] mb-2">{err}</div>}
+      {err && <div className="text-bad text-caption mb-2">{err}</div>}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <Card title="CPU" value={last ? `${last.cpuPercent.toFixed(1)}%` : "…"} sub={last ? `${last.onlineCpus} CPUs available` : ""}>
           <Spark values={samples.map((s) => s.cpuPercent)} max={cpuMax} />
@@ -61,10 +61,10 @@ export function StatsView({ id, running }: { id: string; running: boolean }) {
       </div>
       <Section title="Processes" right={<Button kind="ghost" onClick={() => api.top(id).then(setTop)}>Refresh</Button>}>
         {!top?.Processes?.length ? (
-          <div className="px-3 py-2 text-fg3 text-[12px]">No processes reported</div>
+          <div className="px-3 py-2 text-fg3 text-caption">No processes reported</div>
         ) : (
           <div className="overflow-auto">
-            <table className="w-full mono text-[11px]">
+            <table className="w-full mono text-badge">
               <thead><tr>{top.Titles?.map((t) => <th key={t} className="text-left font-medium text-fg2 px-2.5 py-1.5 border-b border-line whitespace-nowrap">{t}</th>)}</tr></thead>
               <tbody>
                 {top.Processes.map((p, i) => (
@@ -81,10 +81,10 @@ export function StatsView({ id, running }: { id: string; running: boolean }) {
 
 function Card({ title, value, sub, children }: { title: string; value: string; sub?: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-[10px] border border-line bg-panel p-3 overflow-hidden">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-fg3">{title}</div>
-      <div className="text-[18px] font-semibold tabular-nums mt-0.5 whitespace-pre">{value}</div>
-      <div className="text-[11.5px] text-fg2 h-[16px]">{sub}</div>
+    <div className="card p-3 overflow-hidden">
+      <div className="text-caption font-semibold text-fg2">{title}</div>
+      <div className="text-title font-semibold tabular-nums mt-0.5 whitespace-pre">{value}</div>
+      <div className="text-caption text-fg2 h-[16px]">{sub}</div>
       {children && <div className="mt-1.5 -mx-3 -mb-3">{children}</div>}
     </div>
   );

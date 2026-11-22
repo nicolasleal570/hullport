@@ -69,7 +69,7 @@ export function ImagesView() {
             <Dot tone={used ? "ok" : "idle"} />
             <div className="min-w-0" title={`${n.repo}:${n.tag}`}>
               <div className="truncate font-medium leading-tight">{n.repo.includes("/") ? n.repo.slice(n.repo.lastIndexOf("/") + 1) : n.repo}</div>
-              <div className="truncate text-[11.5px] text-fg2 leading-tight">
+              <div className="truncate text-caption text-fg2 leading-tight">
                 {n.dangling ? <Badge tone="warn">dangling</Badge> : <><span className="text-fg">{n.tag}</span>{n.repo.includes("/") && <span className="text-fg3"> · {n.repo.slice(0, n.repo.lastIndexOf("/"))}</span>}</>}
                 {(i.RepoTags?.length ?? 0) > 1 && <span className="text-fg3"> · +{i.RepoTags!.length - 1} tags</span>}
               </div>
@@ -78,9 +78,9 @@ export function ImagesView() {
         );
       },
     },
-    { id: "id", header: "ID", width: "100px", cell: (i) => <span className="mono text-[11.5px] text-fg2">{shortId(i.Id)}</span>, sort: (a, b) => a.Id.localeCompare(b.Id) },
-    { id: "size", header: "Size", width: "76px", align: "right", sort: (a, b) => a.Size - b.Size, cell: (i) => <span className="tabular-nums text-fg2 text-[12px]">{bytes(i.Size)}</span> },
-    { id: "created", header: "Created", width: "80px", align: "right", sort: (a, b) => a.Created - b.Created, cell: (i) => <span className="tabular-nums text-fg2 text-[12px]">{ago(i.Created)}</span> },
+    { id: "id", header: "ID", width: "100px", cell: (i) => <span className="mono text-caption text-fg2">{shortId(i.Id)}</span>, sort: (a, b) => a.Id.localeCompare(b.Id) },
+    { id: "size", header: "Size", width: "76px", align: "right", sort: (a, b) => a.Size - b.Size, cell: (i) => <span className="tabular-nums text-fg2 text-caption">{bytes(i.Size)}</span> },
+    { id: "created", header: "Created", width: "80px", align: "right", sort: (a, b) => a.Created - b.Created, cell: (i) => <span className="tabular-nums text-fg2 text-caption">{ago(i.Created)}</span> },
   ];
 
   const menu = (i: ImageSummary): MenuItem[] => [
@@ -147,7 +147,7 @@ export function ImagesView() {
               onChange={(f) => setUi({ imageFilter: f })}
               tabs={[{ id: "all", label: "All" }, { id: "inuse", label: "In Use" }, { id: "unused", label: "Unused" }, { id: "dangling", label: `Dangling${dangling ? ` ${dangling}` : ""}` }]}
             />
-            <span className="text-fg3 text-[12px] tabular-nums">{bytes(totalSize)}</span>
+            <span className="text-fg3 text-caption tabular-nums">{bytes(totalSize)}</span>
           </div>
         }
       >
@@ -263,7 +263,7 @@ function ImageInfo({ i, d, users }: { i: ImageSummary; d: any; users: ContainerS
     <div className="p-4 fadein">
       <Section title="General">
         <Row label="ID" mono><span className="inline-flex items-center gap-1">{shortId(i.Id)}<CopyButton text={i.Id} title="Copy ID" /></span></Row>
-        <Row label="Tags">{(i.RepoTags ?? []).length ? <span className="flex flex-wrap gap-1">{i.RepoTags!.map((t) => <Badge key={t} tone="accent" plain>{t}</Badge>)}</span> : null}</Row>
+        <Row label="Tags">{(i.RepoTags ?? []).length ? <span className="flex flex-wrap gap-1">{i.RepoTags!.map((t) => <Badge key={t} tone="strong" plain>{t}</Badge>)}</span> : null}</Row>
         {i.RepoDigests?.[0] && <Row label="Digest" mono><span className="inline-flex items-center gap-1 break-all">{i.RepoDigests[0].split("@")[1]?.slice(0, 26)}…<CopyButton text={i.RepoDigests[0]} title="Copy digest" /></span></Row>}
         <Row label="Size">{bytes(i.Size)}</Row>
         <Row label="Created">{dateTime(i.Created)}</Row>
@@ -275,16 +275,16 @@ function ImageInfo({ i, d, users }: { i: ImageSummary; d: any; users: ContainerS
         <Row label="Exposed ports" mono>{Object.keys(cfg.ExposedPorts ?? {}).join(", ") || null}</Row>
       </Section>
       <Section title={`Containers using this image (${users.length})`}>
-        {users.length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">Not used by any container</div> : users.map((c) => (
+        {users.length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">Not used by any container</div> : users.map((c) => (
           <button key={c.Id} onClick={() => go("containers", c.Id, "info")} className="w-full flex items-center gap-2 px-3 h-[30px] border-b border-line last:border-b-0 hover:bg-hover text-left">
             <Dot tone={c.State === "running" ? "ok" : "idle"} />
             <span className="flex-1 truncate">{containerName(c)}</span>
-            <span className="text-fg3 text-[11.5px]">{c.Status}</span>
+            <span className="text-fg3 text-caption">{c.Status}</span>
           </button>
         ))}
       </Section>
       <Section title={`Environment (${env.length})`}>
-        {env.length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">None</div> : env.map((e, k) => {
+        {env.length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">None</div> : env.map((e, k) => {
           const x = e.indexOf("=");
           return <Row key={k} label={e.slice(0, x)} mono>{e.slice(x + 1)}</Row>;
         })}
@@ -292,7 +292,7 @@ function ImageInfo({ i, d, users }: { i: ImageSummary; d: any; users: ContainerS
       {cfg.Labels && Object.keys(cfg.Labels).length > 0 && (
         <Section title="Labels">
           {Object.entries(cfg.Labels as Record<string, string>).map(([k, v]) => (
-            <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>
+            <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>
           ))}
         </Section>
       )}
@@ -312,10 +312,10 @@ function Layers({ id }: { id: string }) {
           const cmd = (h.CreatedBy ?? "").replace(/^\/bin\/sh -c #\(nop\)\s*/, "").replace(/^\/bin\/sh -c /, "RUN ");
           return (
             <div key={k} className="flex gap-3 px-3 py-[6px] border-b border-line last:border-b-0 items-start">
-              <span className="text-fg3 tabular-nums w-5 text-right text-[11.5px] pt-[1px]">{rows.length - k}</span>
-              <span className="mono text-[11.5px] flex-1 min-w-0 break-all whitespace-pre-wrap selectable">{cmd || <span className="text-fg3">(empty)</span>}</span>
-              <span className={`tabular-nums text-[11.5px] w-[64px] text-right ${h.Size > 0 ? "text-fg" : "text-fg3"}`}>{bytes(h.Size)}</span>
-              <span className="tabular-nums text-[11.5px] text-fg3 w-[64px] text-right">{ago(h.Created)}</span>
+              <span className="text-fg3 tabular-nums w-5 text-right text-caption pt-[1px]">{rows.length - k}</span>
+              <span className="mono text-caption flex-1 min-w-0 break-all whitespace-pre-wrap selectable">{cmd || <span className="text-fg3">(empty)</span>}</span>
+              <span className={`tabular-nums text-caption w-[64px] text-right ${h.Size > 0 ? "text-fg" : "text-fg3"}`}>{bytes(h.Size)}</span>
+              <span className="tabular-nums text-caption text-fg3 w-[64px] text-right">{ago(h.Created)}</span>
             </div>
           );
         })}

@@ -59,15 +59,15 @@ export function NetworksView() {
             <Dot tone={ms.some((c) => c.State === "running") ? "ok" : "idle"} />
             <div className="min-w-0">
               <div className="truncate font-medium leading-tight flex items-center gap-1.5">{n.Name}{isBuiltin(n) && <Badge>system</Badge>}</div>
-              <div className="truncate text-[11.5px] text-fg2 leading-tight">{ms.length ? `${ms.length} container${ms.length > 1 ? "s" : ""}` : "No containers"}</div>
+              <div className="truncate text-caption text-fg2 leading-tight">{ms.length ? `${ms.length} container${ms.length > 1 ? "s" : ""}` : "No containers"}</div>
             </div>
           </div>
         );
       },
     },
-    { id: "driver", header: "Driver", width: "62px", sort: (a, b) => (a.Driver ?? "").localeCompare(b.Driver ?? ""), cell: (n) => <span className="text-fg2 text-[12px]">{n.Driver}</span> },
-    { id: "subnet", header: "Subnet", width: "minmax(100px, 1fr)", cell: (n) => <span className="mono text-[11.5px] text-fg2">{n.IPAM?.Config?.[0]?.Subnet ?? "—"}</span> },
-    { id: "created", header: "Created", width: "78px", align: "right", sort: (a, b) => Date.parse(a.Created ?? "") - Date.parse(b.Created ?? ""), cell: (n) => <span className="text-fg2 text-[12px] tabular-nums">{ago(n.Created)}</span> },
+    { id: "driver", header: "Driver", width: "62px", sort: (a, b) => (a.Driver ?? "").localeCompare(b.Driver ?? ""), cell: (n) => <span className="text-fg2 text-caption">{n.Driver}</span> },
+    { id: "subnet", header: "Subnet", width: "minmax(100px, 1fr)", cell: (n) => <span className="mono text-caption text-fg2">{n.IPAM?.Config?.[0]?.Subnet ?? "—"}</span> },
+    { id: "created", header: "Created", width: "78px", align: "right", sort: (a, b) => Date.parse(a.Created ?? "") - Date.parse(b.Created ?? ""), cell: (n) => <span className="text-fg2 text-caption tabular-nums">{ago(n.Created)}</span> },
   ];
 
   const menu = (n: Network): MenuItem[] => [
@@ -172,7 +172,7 @@ function NetworkDetail({ n }: { n: Network }) {
         {tab === "info" && (
           <div className="p-4 fadein">
             {isBuiltin(n) && (
-              <div className="mb-3 text-[12px] text-fg2 rounded-[8px] border border-line px-3 py-2 bg-panel">
+              <div className="mb-3 text-caption text-fg2 card px-3 py-2">
                 {n.Name === "bridge" ? "The default bridge network. Containers without a network join it; they can't reach each other by name here." : n.Name === "host" ? "Containers on this network share the engine's network stack (no isolation, no port publishing)." : "Containers here have no networking."} Built-in networks can't be deleted.
               </div>
             )}
@@ -198,12 +198,12 @@ function NetworkDetail({ n }: { n: Network }) {
             </Section>
             {d.Options && Object.keys(d.Options).length > 0 && (
               <Section title="Options">
-                {Object.entries(d.Options).map(([k, v]) => <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>)}
+                {Object.entries(d.Options).map(([k, v]) => <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>)}
               </Section>
             )}
             {d.Labels && Object.keys(d.Labels).length > 0 && (
               <Section title="Labels">
-                {Object.entries(d.Labels).map(([k, v]) => <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-[11.5px] selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>)}
+                {Object.entries(d.Labels).map(([k, v]) => <div key={k} className="px-3 py-[5px] border-b border-line last:border-b-0 mono text-caption selectable break-all"><span className="text-fg2">{k}</span> = {v}</div>)}
               </Section>
             )}
           </div>
@@ -211,11 +211,11 @@ function NetworkDetail({ n }: { n: Network }) {
         {tab === "containers" && (
           <div className="p-4 fadein">
             <Section title={`Connected containers (${members.length})`} right={canConnect ? <Button kind="ghost" onClick={() => setConnecting(true)}><IconPlus size={12} /> Connect</Button> : undefined}>
-              {members.length === 0 ? <div className="px-3 py-2 text-fg3 text-[12px]">No containers are connected</div> : members.map(([cid, m]) => (
+              {members.length === 0 ? <div className="px-3 py-2 text-fg3 text-caption">No containers are connected</div> : members.map(([cid, m]) => (
                 <div key={cid} className="flex items-center gap-3 px-3 h-[32px] border-b border-line last:border-b-0 hover:bg-hover">
-                  <button className="flex-1 min-w-0 truncate text-left hover:text-accent" onClick={() => go("containers", cid, "info")}>{m.Name}</button>
-                  <span className="mono text-[11.5px] text-fg2">{m.IPv4Address || "—"}</span>
-                  <span className="mono text-[11px] text-fg3 w-[118px] truncate">{m.MacAddress}</span>
+                  <button className="flex-1 min-w-0 truncate text-left hover:underline" onClick={() => go("containers", cid, "info")}>{m.Name}</button>
+                  <span className="mono text-caption text-fg2">{m.IPv4Address || "—"}</span>
+                  <span className="mono text-badge text-fg3 w-[118px] truncate">{m.MacAddress}</span>
                   <IconButton title="Disconnect" tone="bad" disabled={n.Name === "host" || n.Name === "none"} onClick={() => disconnect(n, cid, m.Name ?? cid)}><IconX size={12} /></IconButton>
                 </div>
               ))}
@@ -270,11 +270,11 @@ function ConnectDialog({ n, connected, onClose }: { n: Network; connected: strin
   };
   return (
     <Modal title={`Connect to ${n.Name}`} onClose={onClose} width={460} footer={<>
-      {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+      {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
       <Button onClick={onClose}>Cancel</Button>
       <Button kind="primary" busy={busy} disabled={!cid} onClick={submit}>Connect</Button>
     </>}>
-      {containers.length === 0 ? <div className="text-fg2 text-[12.5px]">Every eligible container is already connected.</div> : (
+      {containers.length === 0 ? <div className="text-fg2 text-body">Every eligible container is already connected.</div> : (
         <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); submit(); }}>
           <Field label="Container">
             <select className="field" value={cid} onChange={(e) => setCid(e.target.value)}>
@@ -319,7 +319,7 @@ function CreateNetworkDialog({ onClose }: { onClose: () => void }) {
   };
   return (
     <Modal title="New Network" onClose={onClose} width={500} footer={<>
-      {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+      {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
       <Button onClick={onClose}>Cancel</Button>
       <Button kind="primary" busy={busy} disabled={!name.trim()} onClick={submit}>Create</Button>
     </>}>
@@ -337,7 +337,7 @@ function CreateNetworkDialog({ onClose }: { onClose: () => void }) {
           <Field label="Gateway"><input className="field mono" value={gateway} onChange={(e) => setGateway(e.target.value)} placeholder="172.30.0.1" /></Field>
           <Field label="IP range"><input className="field mono" value={ipRange} onChange={(e) => setIpRange(e.target.value)} placeholder="optional" /></Field>
         </div>
-        <div className="text-[11px] text-fg3 -mt-1">Leave the addresses empty to let Docker pick a free subnet.</div>
+        <div className="text-badge text-fg3 -mt-1">Leave the addresses empty to let Docker pick a free subnet.</div>
         <div className="flex flex-col gap-0.5">
           <Checkbox checked={internal} onChange={setInternal} label="Internal" hint="No access to outside networks." />
           <Checkbox checked={attachable} onChange={setAttachable} label="Attachable" hint="Standalone containers may join (swarm overlay)." />

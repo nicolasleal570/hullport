@@ -1,142 +1,324 @@
 @import "tailwindcss";
 @import "@xterm/xterm/css/xterm.css";
 
-@theme {
+/*
+ * Hullport's design system, after Wispshot's: near-monochrome, opaque surfaces, two signals.
+ * Volt is on, selected, done and focus; Ember is live and destructive. Views use the semantic
+ * roles below (bg-tile, text-fg2, rounded-control, text-caption…), never raw values.
+ *
+ * `inline` makes utilities read the --c-* variables where they are used, so a scope such as
+ * `.on-sel` can re-point them for everything inside it.
+ */
+@theme inline {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* Only the roles below: Tailwind's stock palette (blues included) is off. */
+  --color-*: initial;
+
+  /* Surfaces */
   --color-bg: var(--c-bg);
-  --color-panel: var(--c-panel);
+  --color-tile: var(--c-tile);
   --color-raised: var(--c-raised);
-  --color-sidebar: var(--c-sidebar);
+  --color-well: var(--c-well);
+  --color-well-hover: var(--c-well-hover);
+  --color-hover: var(--c-hover);
   --color-line: var(--c-line);
   --color-line-strong: var(--c-line-strong);
+  --color-edge: var(--c-card-edge);
+  /* Text */
   --color-fg: var(--c-fg);
   --color-fg2: var(--c-fg2);
   --color-fg3: var(--c-fg3);
-  --color-accent: var(--c-accent);
-  --color-accent-soft: var(--c-accent-soft);
-  --color-hover: var(--c-hover);
+  /* Roles */
+  --color-primary: var(--c-primary);
+  --color-primary-hover: var(--c-primary-hover);
+  --color-on-primary: var(--c-on-primary);
   --color-sel: var(--c-sel);
+  --color-on-sel: var(--c-on-sel);
+  --color-sel-mark: var(--c-sel-mark);
+  --color-danger-fill: var(--c-danger-fill);
+  --color-danger-fill-hover: var(--c-danger-fill-hover);
+  --color-on-danger: #ffffff;
+  --color-scrim: var(--c-scrim);
+  /* States: `ok`/`warn`/`bad` are for text and glyphs, `*-fill` for dots and tints. */
   --color-ok: var(--c-ok);
+  --color-ok-fill: var(--c-ok-fill);
+  --color-ok-edge: var(--c-ok-edge);
   --color-warn: var(--c-warn);
+  --color-warn-fill: var(--c-warn-fill);
+  --color-warn-edge: var(--c-warn-edge);
   --color-bad: var(--c-bad);
-  --color-field: var(--c-field);
+
+  /* Radii */
+  --radius-label: 6px;
+  --radius-control: 10px;
+  /* A segmented well: a control plus its 3px inset. */
+  --radius-well: 13px;
+  --radius-thumb: 14px;
+  --radius-card: 16px;
+  --radius-panel: 20px;
+  --radius-tile: 28px;
+
+  /* Type: SF Pro, regular / medium / semibold only. */
+  --text-title: 22px;
+  --text-title--letter-spacing: -0.015em;
+  --text-headline: 15px;
+  --text-headline--letter-spacing: -0.01em;
+  --text-body: 13px;
+  --text-caption: 12px;
+  --text-badge: 11px;
+
+  /* Motion: fast in, soft out. Hover-in utilities add `hover:duration-100`. */
+  --default-transition-duration: 160ms;
+  --default-transition-timing-function: cubic-bezier(0, 0, 0.58, 1);
 }
 
+/* Dark appearance. */
 :root {
   color-scheme: dark;
-  --c-bg: #1c1c1e;
-  --c-panel: #202023;
-  --c-raised: #2a2a2e;
-  --c-sidebar: rgba(36, 36, 40, 0.55);
-  --c-line: rgba(255, 255, 255, 0.075);
-  --c-line-strong: rgba(255, 255, 255, 0.14);
-  --c-fg: #ececee;
-  --c-fg2: #a5a5ab;
-  --c-fg3: #6f6f76;
-  --c-accent: #0a84ff;
-  --c-accent-soft: rgba(10, 132, 255, 0.18);
-  --c-hover: rgba(255, 255, 255, 0.045);
-  --c-sel: rgba(10, 132, 255, 0.26);
-  --c-ok: #32d74b;
-  --c-warn: #ffd60a;
-  --c-bad: #ff453a;
-  --c-field: rgba(255, 255, 255, 0.07);
+  --c-bg: #0f0f0f;
+  --c-tile: #1a1a1a;
+  --c-raised: #262626;
+  --c-well: #262626;
+  --c-well-hover: #333333;
+  --c-hover: rgb(255 255 255 / 0.05);
+  --c-line: #2e2e2e;
+  --c-line-strong: #3d3d3d;
+  /* Cards are told apart by the shadow in light mode and by this edge in dark mode. */
+  --c-card-edge: #2e2e2e;
+  --c-fg: #ffffff;
+  --c-fg2: #a3a3a3;
+  --c-fg3: #8c8c8c;
+  --c-primary: #ffffff;
+  --c-primary-hover: #f4f4f4;
+  --c-on-primary: #111111;
+  --c-sel: #d4f53c;
+  --c-on-sel: #111111;
+  --c-sel-mark: #1a1a1a;
+  --c-sel-warn: #6b4500;
+  --c-sel-bad: #b42f08;
+  --c-ok: #d4f53c;
+  --c-ok-fill: #d4f53c;
+  --c-ok-edge: transparent;
+  --c-warn: #f5b83d;
+  --c-warn-fill: #f5b83d;
+  --c-warn-edge: transparent;
+  --c-bad: #ff4a1c;
+  --c-danger-fill: #d93a0b;
+  --c-danger-fill-hover: #bf3209;
+  --c-focus: #d4f53c;
+  --c-focus-halo: rgb(212 245 60 / 0.28);
+  --c-scrim: rgb(0 0 0 / 0.5);
+  --c-shadow-tile: 0 0 #0000;
+  --c-shadow-floating: 0 8px 28px rgb(0 0 0 / 0.5);
+  /* HUD: always graphite (the terminal). */
+  --c-hud: #1a1a1a;
+  --c-hud-fg: #ffffff;
+  --c-hud-cursor: #d4f53c;
+  --c-hud-selection: rgb(212 245 60 / 0.3);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: light;
-    --c-bg: #ffffff;
-    --c-panel: #fbfbfc;
-    --c-raised: #f2f2f4;
-    --c-sidebar: rgba(232, 232, 236, 0.55);
-    --c-line: rgba(0, 0, 0, 0.08);
-    --c-line-strong: rgba(0, 0, 0, 0.15);
-    --c-fg: #1d1d1f;
-    --c-fg2: #5f5f66;
-    --c-fg3: #9a9aa1;
-    --c-accent: #007aff;
-    --c-accent-soft: rgba(0, 122, 255, 0.12);
-    --c-hover: rgba(0, 0, 0, 0.035);
-    --c-sel: rgba(0, 122, 255, 0.16);
-    --c-ok: #28a745;
-    --c-warn: #c99700;
-    --c-bad: #e0352b;
-    --c-field: rgba(0, 0, 0, 0.05);
+    --c-bg: #ececec;
+    --c-tile: #ffffff;
+    --c-raised: #ffffff;
+    --c-well: #f4f4f4;
+    --c-well-hover: #ebebeb;
+    --c-hover: rgb(17 17 17 / 0.045);
+    --c-line: #ebebeb;
+    --c-line-strong: #dcdcdc;
+    --c-card-edge: transparent;
+    --c-fg: #111111;
+    --c-fg2: #5c5c5c;
+    /* Wispshot's #737373, a step darker so it passes 4.5:1 on the window background too. */
+    --c-fg3: #6b6b6b;
+    --c-primary: #1a1a1a;
+    --c-primary-hover: #333333;
+    --c-on-primary: #ffffff;
+    --c-sel: #1a1a1a;
+    --c-on-sel: #ffffff;
+    --c-sel-mark: #d4f53c;
+    --c-sel-warn: #f5b83d;
+    --c-sel-bad: #ff4a1c;
+    /* Volt can't carry text on white: text gets a dark olive, dots keep Volt with an olive edge. */
+    --c-ok: #4a6b00;
+    --c-ok-fill: #d4f53c;
+    --c-ok-edge: rgb(74 107 0 / 0.5);
+    --c-warn: #8a5700;
+    --c-warn-fill: #f5b83d;
+    --c-warn-edge: rgb(138 87 0 / 0.4);
+    /* Ember Strong, a step darker so it passes 4.5:1 on the window background. */
+    --c-bad: #c2340a;
+    --c-focus: #1a1a1a;
+    --c-focus-halo: #d4f53c;
+    --c-scrim: rgb(17 17 17 / 0.32);
+    --c-shadow-tile: 0 4px 12px rgb(17 17 17 / 0.07);
+    --c-shadow-floating: 0 8px 28px rgb(17 17 17 / 0.28);
   }
 }
 
-/* Opaque window (screenshots / no vibrancy). */
-html.opaque {
-  --c-sidebar: #26262a;
-}
-@media (prefers-color-scheme: light) {
-  html.opaque { --c-sidebar: #ececf0; }
+/*
+ * Inside a selected row, nav item or tab: text and states re-pointed to read on the selected
+ * fill (graphite in light mode, Volt in dark mode).
+ */
+@layer components {
+  .on-sel {
+    --c-fg: var(--c-on-sel);
+    --c-fg2: color-mix(in srgb, var(--c-on-sel) 78%, transparent);
+    --c-fg3: color-mix(in srgb, var(--c-on-sel) 65%, transparent);
+    --c-hover: color-mix(in srgb, var(--c-on-sel) 12%, transparent);
+    --c-well: color-mix(in srgb, var(--c-on-sel) 14%, transparent);
+    --c-well-hover: color-mix(in srgb, var(--c-on-sel) 22%, transparent);
+    --c-line: color-mix(in srgb, var(--c-on-sel) 18%, transparent);
+    --c-ok: var(--c-sel-mark);
+    --c-ok-fill: var(--c-sel-mark);
+    --c-ok-edge: transparent;
+    --c-warn: var(--c-sel-warn);
+    --c-warn-fill: var(--c-sel-warn);
+    --c-warn-edge: transparent;
+    --c-bad: var(--c-sel-bad);
+    color: var(--c-fg);
+  }
 }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  background: transparent;
-  overflow: hidden;
+/* A card on the window background: tile fill, the tile shadow in light mode, an edge in dark. */
+@utility card {
+  background-color: var(--c-tile);
+  border: 1px solid var(--c-card-edge);
+  border-radius: var(--radius-card);
+  box-shadow: var(--c-shadow-tile);
 }
 
-body {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.35;
+/* Menus, dialogs, toasts: anything floating over the window. */
+@utility shadow-floating {
+  box-shadow: var(--c-shadow-floating);
+}
+
+/* A link in running text: no color of its own, an underline for the affordance. */
+@utility link {
   color: var(--c-fg);
-  -webkit-font-smoothing: antialiased;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--c-fg) 30%, transparent);
+  text-underline-offset: 2px;
+  &:hover { text-decoration-color: currentColor; }
 }
 
-.selectable, .selectable * {
-  user-select: text;
-  -webkit-user-select: text;
-  cursor: text;
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  b, strong { font-weight: 600; }
+
+  .selectable, .selectable * {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.35);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.55); }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
+  input, select, textarea, button { font: inherit; color: inherit; }
+  button { cursor: default; }
+  input[type="radio"] { accent-color: var(--c-sel); }
+  /* A check on the selected fill: a Volt mark on graphite in light mode, graphite on Volt in dark mode. */
+  input[type="checkbox"] {
+    appearance: none;
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    display: inline-grid;
+    place-content: center;
+    border: 1px solid var(--c-line-strong);
+    /* Smaller than any control, so a step under the label radius: at 6px it would read as a radio. */
+    border-radius: 4px;
+    background: var(--c-tile);
+    transition: background-color 160ms ease-out, border-color 160ms ease-out;
+  }
+  input[type="checkbox"]::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    background: var(--c-sel-mark);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6 8.6 2.4' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    transform: scale(0);
+    transition: transform 100ms ease-out;
+  }
+  input[type="checkbox"]:checked { background: var(--c-sel); border-color: var(--c-sel); }
+  input[type="checkbox"]:checked::before { transform: scale(1); }
+  input[type="checkbox"]:disabled { opacity: 0.5; }
+
+  /* Focus: a graphite ring with a Volt halo in light mode, a Volt ring in dark mode. */
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 5px var(--c-focus-halo);
+  }
 }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.35);
-  border-radius: 10px;
-  border: 3px solid transparent;
-  background-clip: content-box;
+@layer components {
+  .field {
+    background: var(--c-well);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    padding: 4px 10px;
+    height: 28px;
+    min-width: 0;
+    transition: background-color 160ms ease-out;
+  }
+  .field:hover:not(:focus):not(:disabled) { background: var(--c-well-hover); transition-duration: 100ms; }
+  .field:focus { outline: 2px solid var(--c-focus); outline-offset: 0; box-shadow: 0 0 0 4px var(--c-focus-halo); }
+  .field::placeholder { color: var(--c-fg3); }
+  .field:disabled { opacity: 0.5; }
+  textarea.field { height: auto; }
+  select.field { padding-right: 4px; }
+
+  .mono { font-family: var(--font-mono); font-size: 12px; }
 }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.55); }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-corner { background: transparent; }
-
-input, select, textarea, button { font: inherit; color: inherit; }
-button { cursor: default; }
-:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; border-radius: 5px; }
-
-.field {
-  background: var(--c-field);
-  border: 1px solid var(--c-line);
-  border-radius: 6px;
-  padding: 4px 8px;
-  height: 26px;
-  outline: none;
-  min-width: 0;
-}
-.field:focus { border-color: var(--c-accent); box-shadow: 0 0 0 3px var(--c-accent-soft); }
-textarea.field { height: auto; }
-select.field { padding-right: 4px; }
-
-.mono { font-family: var(--font-mono); font-size: 12px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.9s linear infinite; }
 
 @keyframes fadein { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
-.fadein { animation: fadein 0.14s ease-out; }
+.fadein { animation: fadein 0.1s ease-out; }
 
 @keyframes pulse { 50% { opacity: 0.4; } }
 .pulse { animation: pulse 1.4s ease-in-out infinite; }
+
+/* Reduce Motion: movement becomes a short crossfade; presses don't scale. */
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .fadein { animation: fade 0.12s ease-out; }
+  .pulse { animation: none; }
+  input[type="checkbox"]::before { transition: none; }
+}
 
 .xterm { padding: 6px 0 0 8px; height: 100%; }
 .xterm-viewport::-webkit-scrollbar-thumb { background-color: rgba(128,128,128,0.4); }

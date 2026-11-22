@@ -3,7 +3,7 @@ import type { SVGProps } from "react";
 type P = SVGProps<SVGSVGElement> & { size?: number };
 const base = (size = 16): SVGProps<SVGSVGElement> => ({
   width: size, height: size, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor",
-  strokeWidth: 1.35, strokeLinecap: "round", strokeLinejoin: "round",
+  strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round",
 });
 const mk = (d: React.ReactNode) => ({ size, ...p }: P) => <svg {...base(size)} {...p}>{d}</svg>;
 

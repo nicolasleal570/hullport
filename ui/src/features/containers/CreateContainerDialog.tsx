@@ -68,7 +68,7 @@ export function CreateContainerDialog({ onClose, image: initialImage, defaults }
       width={600}
       footer={
         <>
-          {error && <div className="flex-1 text-bad text-[12px] self-center truncate" title={error}>{error}</div>}
+          {error && <div className="flex-1 text-bad text-caption self-center truncate" title={error}>{error}</div>}
           <Button onClick={onClose}>Cancel</Button>
           <Button kind="primary" busy={busy} disabled={!image.trim()} onClick={submit}>{start ? "Create & Start" : "Create"}</Button>
         </>
@@ -101,7 +101,7 @@ export function CreateContainerDialog({ onClose, image: initialImage, defaults }
                 <IconButton title="Remove" onClick={() => setPorts(ports.filter((_, j) => j !== i))}><IconX size={12} /></IconButton>
               </div>
             ))}
-            <button type="button" className="self-start inline-flex items-center gap-1 text-accent text-[12px] hover:underline" onClick={() => setPorts([...ports, { hostPort: "", containerPort: "", protocol: "tcp" }])}>
+            <button type="button" className="self-start inline-flex items-center gap-1 h-[24px] px-2 -mx-2 rounded-control text-caption font-medium text-fg2 hover:text-fg hover:bg-hover transition-colors hover:duration-100" onClick={() => setPorts([...ports, { hostPort: "", containerPort: "", protocol: "tcp" }])}>
               <IconPlus size={12} /> Add port
             </button>
           </div>
@@ -118,12 +118,12 @@ export function CreateContainerDialog({ onClose, image: initialImage, defaults }
                 <input className="field mono flex-1" list="hullport-volumes" placeholder="volume or /Users/…" value={m.source} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, source: e.target.value } : x)))} />
                 <span className="text-fg3">→</span>
                 <input className="field mono flex-1" placeholder="/data" value={m.target} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, target: e.target.value } : x)))} />
-                <label className="text-[12px] text-fg2 flex items-center gap-1"><input type="checkbox" checked={m.readOnly} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, readOnly: e.target.checked } : x)))} />RO</label>
+                <label className="text-caption text-fg2 flex items-center gap-1"><input type="checkbox" checked={m.readOnly} onChange={(e) => setMounts(mounts.map((x, j) => (j === i ? { ...x, readOnly: e.target.checked } : x)))} />RO</label>
                 <IconButton title="Remove" onClick={() => setMounts(mounts.filter((_, j) => j !== i))}><IconX size={12} /></IconButton>
               </div>
             ))}
             <datalist id="hullport-volumes">{volumes.map((v) => <option key={v.Name} value={v.Name} />)}</datalist>
-            <button type="button" className="self-start inline-flex items-center gap-1 text-accent text-[12px] hover:underline" onClick={() => setMounts([...mounts, { source: "", target: "", readOnly: false }])}>
+            <button type="button" className="self-start inline-flex items-center gap-1 h-[24px] px-2 -mx-2 rounded-control text-caption font-medium text-fg2 hover:text-fg hover:bg-hover transition-colors hover:duration-100" onClick={() => setMounts([...mounts, { source: "", target: "", readOnly: false }])}>
               <IconPlus size={12} /> Add mount
             </button>
           </div>
