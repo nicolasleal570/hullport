@@ -96,6 +96,7 @@ export function Table<T>(p: Props<T>) {
   const renderRow = (r: T, indent: boolean) => {
     const key = p.rowKey(r);
     const sel = key === p.selected;
+    const actions = p.rowActions?.(r);
     return (
       <div
         key={key}
@@ -107,22 +108,22 @@ export function Table<T>(p: Props<T>) {
         onContextMenu={(e) => { p.onSelect(key); p.onContextMenu?.(e, r); }}
         // Inset rounded rows; the selected one takes the selected fill and re-points its contents (`.on-sel`).
         className={cx(
-          "group flex items-center mx-1 px-3 min-h-[34px] rounded-control",
+          "group relative grid items-center gap-x-3 mx-1 px-3 min-h-[34px] rounded-control",
           sel ? "bg-sel on-sel" : "hover:bg-hover",
           p.dim?.(r) && !sel && "opacity-60",
         )}
+        style={grid}
       >
-        {/* The actions sit outside the grid: when the list is too narrow the last columns are clipped, never the actions. */}
-        <div className="flex-1 min-w-0 grid items-center gap-x-3 overflow-x-clip" style={grid}>
-          {p.columns.map((c, i) => (
-            <div key={c.id} role="cell" className={cx("min-w-0 truncate", c.align === "right" && "text-right", i === 0 && indent && "pl-5")}>
-              {c.cell(r)}
-            </div>
-          ))}
-        </div>
-        {p.rowActions && (
-          <div className={cx("flex shrink-0 items-center gap-0.5 justify-end pl-2 empty:hidden", sel ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
-            {p.rowActions(r)}
+        {p.columns.map((c, i) => (
+          <div key={c.id} role="cell" className={cx("min-w-0 truncate", c.align === "right" && "text-right", i === 0 && indent && "pl-5")}>
+            {c.cell(r)}
+          </div>
+        ))}
+        {/* The actions float over the row's right end, only on the selected or hovered row, so the columns keep
+            the full width. The hover fill is translucent: an opaque tile under it hides the cells beneath. */}
+        {actions && (
+          <div className={cx("absolute inset-y-0 right-0 rounded-r-control", sel ? "bg-sel" : "invisible group-hover:visible bg-tile")}>
+            <div className={cx("h-full flex items-center gap-0.5 px-2 rounded-r-control", !sel && "bg-hover")}>{actions}</div>
           </div>
         )}
       </div>
